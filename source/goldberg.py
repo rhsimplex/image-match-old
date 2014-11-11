@@ -110,7 +110,7 @@ class ImageSignature(object):
         right_neighbors = -np.concatenate((np.diff(grey_level_matrix), np.zeros(grey_level_matrix.shape[0]).reshape((grey_level_matrix.shape[0],1))), axis=1)
         left_neighbors = -np.concatenate((right_neighbors[:, -1:], right_neighbors[:, :-1]), axis=1)
 
-        down_neighbors = np.concatenate((np.diff(grey_level_matrix, axis=0), np.zeros(grey_level_matrix.shape[1]).reshape((1, grey_level_matrix.shape[1]))))
+        down_neighbors = -np.concatenate((np.diff(grey_level_matrix, axis=0), np.zeros(grey_level_matrix.shape[1]).reshape((1, grey_level_matrix.shape[1]))))
         up_neighbors = -np.concatenate((down_neighbors[-1:], down_neighbors[:-1]))
 
         if diagonal_neighbors:
