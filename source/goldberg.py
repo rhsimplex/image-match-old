@@ -96,15 +96,27 @@ class ImageSignature(object):
         return avg_grey
 
     @staticmethod
-    def compute_differentials(grey_level_matrix, identical_tolerance=2/255., n_levels=2, diagonal_neighbors=True):
+    def compute_differentials(grey_level_matrix,  diagonal_neighbors=True):
         """Computes differences in greylevels for neighboring grid points.
 
-        'Step 4' in the paper.
+        First part of 'step 4' in the paper.
+
+        Returns n x n x 8 array for an n x n grid (if diagonal_neighbors == True)
+
+        The n x nth coordinate corresponds to a grid point.  The eight values are
+        the differences between neighboring grid points, in this order:
+
+        right
+        left
+        up
+        down
+        upper left diagonal
+        lower right diagonal
+        upper right diagonal
+        lower left diagonal
 
         Keyword arguments:
         grey_level_matrix -- grid of values sampled from image
-        identical_tolerance -- threshold for grey level similarity (default 2/225)
-        n_levels -- e.g. n_levels=2 means five difference levels: -2, -1, 0, 1, 2
         diagonal_neighbors -- whether or not to use diagonal neighbors (default True)
         """
         right_neighbors = -np.concatenate((np.diff(grey_level_matrix), np.zeros(grey_level_matrix.shape[0]).reshape((grey_level_matrix.shape[0],1))), axis=1)
@@ -124,6 +136,28 @@ class ImageSignature(object):
             lower_left_neighbors = -np.pad(upper_right_neighbors[1:, 1:], (0, 1), mode='constant')
 
             
-        return right_neighbors, left_neighbors, up_neighbors, down_neighbors, upper_left_neighbors, lower_right_neighbors, np.fliplr(upper_right_neighbors), np.fliplr(lower_left_neighbors)
+        return np.dstack(np.array([right_neighbors, left_neighbors, up_neighbors, down_neighbors, upper_left_neighbors, lower_right_neighbors, np.fliplr(upper_right_neighbors), np.fliplr(lower_left_neighbors)]))
 
+    @staticmethod
+    def normalize_and_threshold(difference_array, identical_tolerance=2/255., n_levels=2):
+        """Normalizes difference matrix in place.
+
+        'Step 4' of the paper.
+
+        Keyword arguments:
+        difference_array -- n x n x l array, where l are the differences between the grid point and its neighbors
+        identical_tolerance -- maximum amount two gray values can differ and still be considered equivalent
+        n_levels -- bin differences into 2 n + 1 bins (e.g. n_levels=2 -> [-2, -1, 0, 1, 2])
+        """
+        difference_array[np.abs(difference_array) < identical_tolerance] = 0.       #set very close values as equivalent
+
+        positive_cutoffs = np.percentile(difference_array[difference_array > 0.], np.linspace(0, 100, n_levels+1))      #bin so that size of bins on each side of zero are equivalent 
+        negative_cutoffs = np.percentile(difference_array[difference_array < 0.], np.linspace(100, 0, n_levels+1))
+
+        for level, interval in enumerate([positive_cutoffs[i:i+2] for i in range(positive_cutoffs.shape[0] - 1)]):
+            difference_array[(difference_array >= interval[0]) & (difference_array <= interval[1])] = level + 1
+
+        for level, interval in enumerate([negative_cutoffs[i:i+2] for i in range(negative_cutoffs.shape[0] - 1)]):
+            difference_array[(difference_array <= interval[0]) & (difference_array >= interval[1])] = -(level + 1)
         
+        return None
