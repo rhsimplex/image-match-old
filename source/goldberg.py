@@ -95,7 +95,35 @@ class ImageSignature(object):
 
         return avg_grey
 
-                
-                
+    @staticmethod
+    def compute_differentials(grey_level_matrix, identical_tolerance=2/255., n_levels=2, diagonal_neighbors=True):
+        """Computes differences in greylevels for neighboring grid points.
+
+        'Step 4' in the paper.
+
+        Keyword arguments:
+        grey_level_matrix -- grid of values sampled from image
+        identical_tolerance -- threshold for grey level similarity (default 2/225)
+        n_levels -- e.g. n_levels=2 means five difference levels: -2, -1, 0, 1, 2
+        diagonal_neighbors -- whether or not to use diagonal neighbors (default True)
+        """
+        right_neighbors = -np.concatenate((np.diff(grey_level_matrix), np.zeros(grey_level_matrix.shape[0]).reshape((grey_level_matrix.shape[0],1))), axis=1)
+        left_neighbors = -np.concatenate((right_neighbors[:, -1:], right_neighbors[:, :-1]), axis=1)
+
+        down_neighbors = np.concatenate((np.diff(grey_level_matrix, axis=0), np.zeros(grey_level_matrix.shape[1]).reshape((1, grey_level_matrix.shape[1]))))
+        up_neighbors = -np.concatenate((down_neighbors[-1:], down_neighbors[:-1]))
+
+        if diagonal_neighbors:
+            diagonals = np.arange(-grey_level_matrix.shape[0] + 1, grey_level_matrix.shape[0])      #this implementation will only work for a square (m x m) grid
+            
+            upper_left_neighbors = sum([np.diagflat(np.insert(np.diff(np.diag(grey_level_matrix, i)), 0, 0), i) for i in diagonals])
+            lower_right_neighbors = -np.pad(upper_left_neighbors[1:, 1:], (0, 1), mode='constant')
+        
+            flipped = np.fliplr(grey_level_matrix)      #flip for anti-diagonal differences
+            upper_right_neighbors = sum([np.diagflat(np.insert(np.diff(np.diag(flipped, i)), 0, 0), i) for i in diagonals])
+            lower_left_neighbors = -np.pad(upper_right_neighbors[1:, 1:], (0, 1), mode='constant')
+
+            
+        return right_neighbors, left_neighbors, up_neighbors, down_neighbors, upper_left_neighbors, lower_right_neighbors, np.fliplr(upper_right_neighbors), np.fliplr(lower_left_neighbors)
 
         
