@@ -114,7 +114,7 @@ class ImageSignature(object):
                 n_levels=self.n_levels)
 
         #Step 5: Flatten array and return signature
-        return np.ravel(diff_mat)
+        return np.ravel(diff_mat).astype('int8')
 
     @staticmethod
     def preprocess_image(imagepath):
