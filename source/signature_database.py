@@ -15,7 +15,7 @@ class SignatureCollection(object):
 
     def add_image(self, path):
         pass
-
+    
     @staticmethod
     def get_words(array, k, N):
         """Gets N words of length k from an array.
@@ -49,3 +49,17 @@ class SignatureCollection(object):
                 words[i] = temp
 
         return words
+
+    @staticmethod
+    def max_contrast(array):
+        """Sets all positive values to one and all negative values to -1.
+
+        Needed for first pass lookup on word table.
+
+        Keyword arguments:
+        array -- target array
+        """
+        array[array > 0] = 1
+        array[array < 0] = -1
+
+        return None
