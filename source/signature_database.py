@@ -20,7 +20,7 @@ class SignatureCollection(object):
             ection not created by an instance of SignatureCollection
             may cause bizarre behavior
         k -- word length
-        N -- number of words (default 63; max 64 for MongoDB, need to leave
+        N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
         """
 
@@ -41,7 +41,10 @@ class SignatureCollection(object):
 
         self.k = k
         self.N = N
-
+        
+        #Exract index fields, if any exist yet
+        self.index_names = [field for field in self.collection.find_one({}).keys()\
+                if field.find('simple') > -1]
 
     def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,\
             insert_block_size=100):
@@ -76,9 +79,9 @@ class SignatureCollection(object):
             print 'Total %i records inserted.' % self.collection.count()
 
         #Index on words
-        index_names = [field for field in self.collection.find_one({}).keys()\
+        self.index_names = [field for field in self.collection.find_one({}).keys()\
                 if field.find('simple') > -1]
-        for name in index_names:
+        for name in self.index_names:
             self.collection.create_index(name)
             if verbose:
                 print 'Indexed %s' % name
@@ -103,7 +106,22 @@ class SignatureCollection(object):
             record[''.join(['simple_word_', str(i)])] = words[i].tolist()
 
         return record
+    
+    def find_matches(self, path):
+        """Returns records which match on at least ONE simplified word.
+
+        Keyword arguments:
+        path -- path to image
+        """
+        record = self.make_record(path)
+        #return records which match any word
+        return self.collection.find({'$or':[{name:record[name]} for name in self.index_names]})
         
+    @staticmethod
+    def normalized_distance(vec1, vec2):
+        return np.linalg.norm(vec1 - vec2, axis=0)/\
+                (np.linalg.norm(vec1, axis=0) + np.linalg.norm(vec2, axis=0))
+    
     @staticmethod
     def get_words(array, k, N):
         """Gets N words of length k from an array.
