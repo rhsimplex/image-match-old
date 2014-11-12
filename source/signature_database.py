@@ -98,7 +98,12 @@ class SignatureCollection(object):
                 print 'Indexed %s' % name
 
     def add_image(self, path):
-        pass
+        """Inserts a single image.
+        
+        Keyword arguments:
+        path -- path to image
+        """
+        self.collection.insert(self.make_record(path))
 
     def make_record(self, path):
         """Makes a record suitable for database insertion.
