@@ -43,6 +43,8 @@ class ImageSignature(object):
             assert crop_percentiles[1] <= 100,\
                     'Upper crop_percentiles limit should be < 100 (%r given)'\
                     % crop_percentiles[1]
+            assert crop_percentiles[0] < crop_percentiles[1], \
+                    'Upper crop_percentile limit should be greater than lower limit.'
             self.lower_percentile = crop_percentiles[0]
             self.upper_percentile = crop_percentiles[1]
             self.crop_percentiles = crop_percentiles
