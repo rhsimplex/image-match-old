@@ -266,14 +266,23 @@ class ImageSignature(object):
                     (0, 1), mode='constant')
 
             
-        return np.dstack(np.array([right_neighbors,\
-                left_neighbors,\
+            return np.dstack(np.array([\
+                    upper_left_neighbors,\
+                    up_neighbors,\
+                    np.fliplr(upper_right_neighbors),\
+                    left_neighbors,\
+                    right_neighbors,\
+                    np.fliplr(lower_left_neighbors),\
+                    down_neighbors,\
+                    lower_right_neighbors,\
+                    ]))
+        
+        return np.dstack(np.array([\
                 up_neighbors,\
+                left_neighbors,\
+                right_neighbors,\
                 down_neighbors,\
-                upper_left_neighbors,\
-                lower_right_neighbors,\
-                np.fliplr(upper_right_neighbors),\
-                np.fliplr(lower_left_neighbors)]))
+                ]))
 
     @staticmethod
     def normalize_and_threshold(difference_array, identical_tolerance=2/255.,\
