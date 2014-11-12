@@ -43,8 +43,9 @@ class SignatureCollection(object):
         self.N = N
         
         #Exract index fields, if any exist yet
-        self.index_names = [field for field in self.collection.find_one({}).keys()\
-                if field.find('simple') > -1]
+        if self.collection.count() > 0:
+            self.index_names = [field for field in self.collection.find_one({}).keys()\
+                    if field.find('simple') > -1]
 
     def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,\
             insert_block_size=100):
