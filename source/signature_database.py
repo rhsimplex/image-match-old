@@ -1,21 +1,94 @@
 from goldberg import ImageSignature
 import numpy as np
+from os import listdir
+from os.path import join
 from pymongo.collection import Collection
 
 class SignatureCollection(object):
     """Wrapper class for MongoDB collection.
+
+    See section 2 of Goldberg et al, available at:
+
+    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection):
+    def __init__(self, collection, k=10, N=100):
+        """Initialize SignatureCollection object
+
+        Keyword arguments:
+        collection -- MongoDB collection. Can be empty or populated.
+            Currently there is no schema checking, so passing a coll-
+            ection not created by an instance of SignatureCollection
+            may cause bizarre behavior
+        k -- word length
+        N -- number of words
+        """
+
+        #Check that collection is a MongoDB collection
         if type(collection) is not Collection:
             raise TypeError('Expected MongoDB collection, got %r' % type(collection))
+        
         self.collection = collection
+        
+        #Use default ImageSignature parameters for now
+        self.gis = ImageSignature()
 
-    def add_images(self, image_dir):
-        pass
+        #Check integer inputs
+        if type(k) is not int:
+            raise TypeError('k should be an integer')
+        if type(N) is not int:
+            raise TypeError('N should be an integer')
+
+        self.k = k
+        self.N = N
+
+
+    def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,\
+            insert_block_size=100):
+        """Bulk adds images to database.
+
+        Probably not very efficient, but fine for prototyping.
+
+        Keyword arguments:
+        image_dir -- directory with images (note: directory should contain only
+            images; no checking of any kind is done)
+        drop_collection -- remove current entries prior to insertion
+        limit -- maximum records to create (not implemented)
+        verbose -- enable console output
+        insert_block_size -- number of records to bulk insert at a time
+        """
+        if drop_collection:
+            self.collection.remove({})
+
+        image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
+        
+        for i in range(0, len(image_paths), insert_block_size):
+            self.collection.insert(\
+                    map(self.make_record, image_paths[i : i + insert_block_size]))
+            if verbose:
+                print 'Inserted %i records.' % i
+        
 
     def add_image(self, path):
         pass
-    
+
+    def make_record(self, path):
+        """Makes a record suitable for database insertion.
+
+        Keyword arguments:
+        path -- path to image
+        """
+        record = {}
+        record['path'] = path
+        signature = self.gis.generate_signature(path)
+        record['signature'] = signature.tolist()
+        words = self.get_words(signature, self.k, self.N)
+        self.max_contrast(words)
+        
+        for i in range(self.N):
+            record[''.join(['simple_word_', str(i)])] = words[i].tolist()
+
+        return record
+        
     @staticmethod
     def get_words(array, k, N):
         """Gets N words of length k from an array.
