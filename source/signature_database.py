@@ -11,7 +11,7 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=10, N=100):
+    def __init__(self, collection, k=16, N=63):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -20,7 +20,8 @@ class SignatureCollection(object):
             ection not created by an instance of SignatureCollection
             may cause bizarre behavior
         k -- word length
-        N -- number of words
+        N -- number of words (default 63; max 64 for MongoDB, need to leave
+            one for _id_)
         """
 
         #Check that collection is a MongoDB collection
@@ -58,15 +59,29 @@ class SignatureCollection(object):
         """
         if drop_collection:
             self.collection.remove({})
+            self.collection.drop_indexes()
+            if verbose:
+                print 'Collection contents dropped.'
 
         image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
         
+        #Insert image signatures and words
         for i in range(0, len(image_paths), insert_block_size):
             self.collection.insert(\
                     map(self.make_record, image_paths[i : i + insert_block_size]))
             if verbose:
                 print 'Inserted %i records.' % i
         
+        if verbose:
+            print 'Total %i records inserted.' % self.collection.count()
+
+        #Index on words
+        index_names = [field for field in self.collection.find_one({}).keys()\
+                if field.find('simple') > -1]
+        for name in index_names:
+            self.collection.create_index(name)
+            if verbose:
+                print 'Indexed %s' % name
 
     def add_image(self, path):
         pass
