@@ -11,7 +11,7 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63):
+    def __init__(self, collection, k=16, N=63, distance_cutoff=0.6):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -22,6 +22,8 @@ class SignatureCollection(object):
         k -- word length
         N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
+        distance_cutoff -- maximum normalized distance between image signature and
+            match signatures
         """
 
         #Check that collection is a MongoDB collection
@@ -42,6 +44,14 @@ class SignatureCollection(object):
         self.k = k
         self.N = N
         
+        #Check float input
+        if type(distance_cutoff) is not float:
+            raise TypeError('distance_cutoff should be a float')
+        if distance_cutoff < 0.:
+            raise ValueError('distance_cutoff should be > 0 (got %r)' % distance_cutoff)
+
+        self.distance_cutoff = distance_cutoff
+
         #Exract index fields, if any exist yet
         if self.collection.count() > 0:
             self.index_names = [field for field in self.collection.find_one({}).keys()\
@@ -109,12 +119,40 @@ class SignatureCollection(object):
         return record
     
     def find_matches(self, path):
+        """Finds matching images.
+
+        First gets entries with matches on at least one word, then compares
+        signatures.
+
+        Keyword arguments:
+        path -- path to target image
+        """
+
+        #Generate record (signature and words)
+        record = self.make_record(path)
+
+        #Find records which match on at least 1 word
+        curs = self.find_word_matches(record)
+        t = list(curs)
+
+        #Extract signatures and paths
+        sigs = np.array(map(lambda x: x['signature'], t), dtype='int8')
+        paths = np.array(map(lambda x: x['path'], t))
+
+        #Compute distances
+        d = self.normalized_distance(sigs, np.array(record['signature'], dtype='int8'))
+
+        #Get postions of matching records
+        w = d < self.distance_cutoff
+        
+        return zip(d[w], paths[w])
+
+    def find_word_matches(self, record):
         """Returns records which match on at least ONE simplified word.
 
         Keyword arguments:
-        path -- path to image
+        record -- dict created by self.make_record
         """
-        record = self.make_record(path)
         #return records which match any word
         return self.collection.find({'$or':[{name:record[name]} for name in self.index_names]})
         
