@@ -118,9 +118,9 @@ class SignatureCollection(object):
         return self.collection.find({'$or':[{name:record[name]} for name in self.index_names]})
         
     @staticmethod
-    def normalized_distance(vec1, vec2):
+    def normalized_distance(vec1, vec2, normed_vec_1):
         return np.linalg.norm(vec1 - vec2, axis=0)/\
-                (np.linalg.norm(vec1, axis=0) + np.linalg.norm(vec2, axis=0))
+                (normed_vec_1 + np.linalg.norm(vec2, axis=0))
     
     @staticmethod
     def get_words(array, k, N):
