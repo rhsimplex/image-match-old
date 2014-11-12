@@ -1,6 +1,7 @@
 from goldberg import ImageSignature
 import numpy as np
 from os import listdir
+from itertools import product
 from os.path import join
 from pymongo.collection import Collection
 
@@ -123,7 +124,7 @@ class SignatureCollection(object):
 
         return record
     
-    def find_matches(self, path):
+    def find_matches(self, path, num_words=1):
         """Finds matching images.
 
         First gets entries with matches on at least one word, then compares
@@ -137,7 +138,7 @@ class SignatureCollection(object):
         record = self.make_record(path)
 
         #Find records which match on at least 1 word
-        curs = self.find_word_matches(record)
+        curs = self.find_word_matches(record, matches=num_words)
         t = list(curs)
 
         #Extract signatures and paths
@@ -152,14 +153,25 @@ class SignatureCollection(object):
         
         return zip(d[w], paths[w])
 
-    def find_word_matches(self, record):
+    def find_word_matches(self, record, matches=1):
         """Returns records which match on at least ONE simplified word.
 
         Keyword arguments:
         record -- dict created by self.make_record
         """
         #return records which match any word
-        return self.collection.find({'$or':[{name:record[name]} for name in self.index_names]})
+        if matches==1:
+            return self.collection.find({'$or':[{name:record[name]}\
+                    for name in self.index_names]}, fields=['signature','path'])
+        #the below works in principle but is extremely slow
+        else:
+            and_queries = []
+            for t in product(self.index_names, repeat=matches):
+                and_queries.append({'$and': [\
+                        {t[0]:record[t[0]]},\
+                        {t[1]:record[t[1]]} ]})
+            return self.collection.find({'$or': and_queries})
+        
         
     @staticmethod
     def normalized_distance(target_array, vec):
