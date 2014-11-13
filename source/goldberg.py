@@ -306,14 +306,19 @@ class ImageSignature(object):
         """
         
         #set very close values as equivalent
-        difference_array[np.abs(difference_array) < identical_tolerance] = 0.
+        mask = np.abs(difference_array) < identical_tolerance
+        difference_array[mask] = 0.
+        
+        #if image is essentially featureless, exit here
+        if np.all(mask):
+            return None
 
         #bin so that size of bins on each side of zero are equivalent
         positive_cutoffs = np.percentile(difference_array[difference_array > 0.],\
                 np.linspace(0, 100, n_levels+1))       
         negative_cutoffs = np.percentile(difference_array[difference_array < 0.],\
                 np.linspace(100, 0, n_levels+1))
-
+            
         for level, interval in enumerate([positive_cutoffs[i:i+2]\
                 for i in range(positive_cutoffs.shape[0] - 1)]):
             difference_array[\
