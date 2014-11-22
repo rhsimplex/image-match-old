@@ -153,6 +153,37 @@ class SignatureCollection(object):
         
         return zip(d[w], paths[w])
 
+    def find_first_match(self, path, max_words=20):
+        """Finds the first match quickly.
+
+        Searches indexes by order of variance. This assumes that a word with high
+        variance corresponds to high-feature regions.
+
+        Keyword arguments:
+        path -- path to image
+        max_words -- maximum number of words to search for match
+        """
+        record = self.make_record(path)
+        stds = {}
+        for word_name in self.index_names:
+            stds[word_name] = np.std(record[word_name])
+        for _n in range(max_words):
+            most_significant_word = max(stds)
+            stds.pop(most_significant_word)
+            word_matches = self.collection.find({most_significant_word:record[most_significant_word]}, fiends=['signature','path'])
+            if len(word_matches) > 0:
+                #Extract signatures and paths
+                sigs = np.array(map(lambda x: x['signature'], word_matches), dtype='int8')
+                paths = np.array(map(lambda x: x['path'], word_matches))
+
+                #Compute distances
+                d = self.normalized_distance(sigs, np.array(record['signature'], dtype='int8'))
+                minpos = np.argmin(d)
+                if d[minpos] < self.distance_cutoff:
+                    return (d[minpos], paths[minpos])
+                       
+
+
     def find_word_matches(self, record, matches=1):
         """Returns records which match on at least ONE simplified word.
 
