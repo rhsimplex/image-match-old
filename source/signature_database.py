@@ -212,6 +212,8 @@ class SignatureCollection(object):
 
         Keyword arguments:
         record -- dict created by self.make_record
+        matches -- minimum number of words to match. Matching on multiple
+            words is currently very slow.
         """
         #return records which match any word
         if matches==1:
@@ -294,7 +296,14 @@ class SignatureCollection(object):
         """Converts a simplified word to an integer
 
         Encodes a k-byte word to int (as those returned by max_contrast).
-        First byte is least significant.
+        First digit is least significant.
+        
+        Returns dot(word + 1, [1, 3, 9, 27 ...] ) for each word in word_array
+
+        e.g.:
+        [ -1, -1, -1] -> 0
+        [ 0,   0,  0] -> 13
+        [ 0,   1,  0] -> 16
 
         Keyword arguments:
         word_array -- N x k array of simple words
