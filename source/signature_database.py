@@ -102,6 +102,12 @@ class SignatureCollection(object):
         self.index_collection(verbose=verbose)
 
     def index_collection(self, verbose=False):
+        """Index a collection on words.
+
+        Keyword arguments:
+        verbose -- enable console output (default False)
+        """
+        
         #Index on words
         self.index_names = [field for field in self.collection.find_one({}).keys()\
                 if field.find('simple') > -1]
