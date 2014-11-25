@@ -182,18 +182,21 @@ class SignatureCollection(object):
                 print record[most_significant_word]
                 
             #Get matches from collection
-            word_matches = list(self.collection.find({most_significant_word:record[most_significant_word]}, fields=['signature','path']))
+            word_matches = list(self.collection.find({most_significant_word:\
+                    record[most_significant_word]}, fields=['signature','path']))
             
             if verbose:
                 print '%i matches found. Computing distances...' % len(word_matches)
 
             if len(word_matches) > 0:
                 #Extract signatures and paths
-                sigs = np.array(map(lambda x: x['signature'], word_matches), dtype='int8')
+                sigs = np.array(map(lambda x: x['signature'],\
+                        word_matches), dtype='int8')
                 paths = np.array(map(lambda x: x['path'], word_matches))
 
                 #Compute distances
-                d = self.normalized_distance(sigs, np.array(record['signature'], dtype='int8'))
+                d = self.normalized_distance(sigs,\
+                        np.array(record['signature'], dtype='int8'))
                 minpos = np.argmin(d)
                 if d[minpos] < self.distance_cutoff:
                     if verbose:
@@ -285,3 +288,22 @@ class SignatureCollection(object):
         array[array < 0] = -1
 
         return None
+
+    @staticmethod
+    def words_to_int(word_array):
+        """Converts a simplified word to an integer
+
+        Encodes a k-byte word to int (as those returned by max_contrast).
+        First byte is least significant.
+
+        Keyword arguments:
+        word_array -- N x k array of simple words
+        """
+        width = word_array.shape[1]
+        
+        #Three states (-1, 0, 1)
+        coding_vector = 3**np.arange(width)
+        
+        #The 'plus one' here makes all digits positive, so that the 
+        #integer represntation is strictly non-negative and unique
+        return np.dot(test_words + 1, code_vec)
