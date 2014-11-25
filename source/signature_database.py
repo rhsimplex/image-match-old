@@ -170,7 +170,7 @@ class SignatureCollection(object):
         for _n in range(max_words):
             most_significant_word = max(stds)
             stds.pop(most_significant_word)
-            word_matches = self.collection.find({most_significant_word:record[most_significant_word]}, fiends=['signature','path'])
+            word_matches = list(self.collection.find({most_significant_word:record[most_significant_word]}, fields=['signature','path']))
             if len(word_matches) > 0:
                 #Extract signatures and paths
                 sigs = np.array(map(lambda x: x['signature'], word_matches), dtype='int8')
@@ -181,8 +181,7 @@ class SignatureCollection(object):
                 minpos = np.argmin(d)
                 if d[minpos] < self.distance_cutoff:
                     return (d[minpos], paths[minpos])
-                       
-
+                
 
     def find_word_matches(self, record, matches=1):
         """Returns records which match on at least ONE simplified word.
