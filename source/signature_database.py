@@ -153,7 +153,7 @@ class SignatureCollection(object):
         
         return zip(d[w], paths[w])
 
-    def find_first_match(self, path, max_words=20):
+    def find_first_match(self, path, max_words=20, verbose=False):
         """Finds the first match quickly.
 
         Searches indexes by order of variance. This assumes that a word with high
@@ -163,14 +163,30 @@ class SignatureCollection(object):
         path -- path to image
         max_words -- maximum number of words to search for match
         """
+        if verbose:
+            print 'Generating image signature...'
         record = self.make_record(path)
         stds = {}
+
+        #Generate standard deviations of each word vector.
         for word_name in self.index_names:
             stds[word_name] = np.std(record[word_name])
+        
+        #Try to match on the n = max_words best (highest std) words
         for _n in range(max_words):
             most_significant_word = max(stds)
             stds.pop(most_significant_word)
+            
+            if verbose:
+                print 'Trying %s...' % most_significant_word
+                print record[most_significant_word]
+                
+            #Get matches from collection
             word_matches = list(self.collection.find({most_significant_word:record[most_significant_word]}, fields=['signature','path']))
+            
+            if verbose:
+                print '%i matches found. Computing distances...' % len(word_matches)
+
             if len(word_matches) > 0:
                 #Extract signatures and paths
                 sigs = np.array(map(lambda x: x['signature'], word_matches), dtype='int8')
@@ -180,7 +196,12 @@ class SignatureCollection(object):
                 d = self.normalized_distance(sigs, np.array(record['signature'], dtype='int8'))
                 minpos = np.argmin(d)
                 if d[minpos] < self.distance_cutoff:
+                    if verbose:
+                        print 'Match found!'
                     return (d[minpos], paths[minpos])
+                if verbose:
+                    print 'No matches found.'
+        return ()
                 
 
     def find_word_matches(self, record, matches=1):
