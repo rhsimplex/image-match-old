@@ -12,7 +12,8 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63, distance_cutoff=0.6):
+    def __init__(self, collection, k=16, N=63, distance_cutoff=0.6,\
+            integer_encoding=True):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -24,7 +25,8 @@ class SignatureCollection(object):
         N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
         distance_cutoff -- maximum normalized distance between image signature and
-            match signatures
+            match signatures (default 0.6)
+        integer_encoding -- save words as integers instead of arrays (default True)
         """
 
         #Check that collection is a MongoDB collection
@@ -52,6 +54,13 @@ class SignatureCollection(object):
             raise ValueError('distance_cutoff should be > 0 (got %r)' % distance_cutoff)
 
         self.distance_cutoff = distance_cutoff
+
+        #Check bool input
+        if type(integer_encoding) is not bool:
+            raise TypeError('integer_encoding should be boolean (got %r)')\
+                    % type(integer_encoding)
+        
+        self.integer_encoding = integer_encoding
 
         #Exract index fields, if any exist yet
         if self.collection.count() > 0:
@@ -116,7 +125,11 @@ class SignatureCollection(object):
         record['path'] = path
         signature = self.gis.generate_signature(path)
         record['signature'] = signature.tolist()
-        words = self.get_words(signature, self.k, self.N)
+        if self.integer_encoding:
+            words = self.words_to_int(self.get_words(signature, self.k, self.N))
+        else:
+            words = self.get_words(signature, self.k, self.N)
+
         self.max_contrast(words)
         
         for i in range(self.N):
@@ -315,4 +328,4 @@ class SignatureCollection(object):
         
         #The 'plus one' here makes all digits positive, so that the 
         #integer represntation is strictly non-negative and unique
-        return np.dot(test_words + 1, code_vec)
+        return np.dot(word_array + 1, coding_vector)
