@@ -76,10 +76,10 @@ class SignatureCollection(object):
         Keyword arguments:
         image_dir -- directory with images (note: directory should contain only
             images; no checking of any kind is done)
-        drop_collection -- remove current entries prior to insertion
+        drop_collection -- remove current entries prior to insertion (default False)
         limit -- maximum records to create (not implemented)
-        verbose -- enable console output
-        insert_block_size -- number of records to bulk insert at a time
+        verbose -- enable console output (default False)
+        insert_block_size -- number of records to bulk insert at a time (default 100)
         """
         if drop_collection:
             self.collection.remove({})
