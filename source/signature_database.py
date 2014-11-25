@@ -98,7 +98,10 @@ class SignatureCollection(object):
         
         if verbose:
             print 'Total %i records inserted.' % self.collection.count()
+    
+        self.index_collection(verbose=verbose)
 
+    def index_collection(self, verbose=False):
         #Index on words
         self.index_names = [field for field in self.collection.find_one({}).keys()\
                 if field.find('simple') > -1]
@@ -145,6 +148,7 @@ class SignatureCollection(object):
 
         Keyword arguments:
         path -- path to target image
+        num_words -- number of words to match before considering (default 1)
         """
 
         #Generate record (signature and words)
