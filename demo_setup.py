@@ -1,5 +1,5 @@
 from source.signature_database import SignatureCollection
-from sys.stdout import flush
+from sys import stdout
 from os.path import split
 from os import chdir, pardir, mkdir, remove
 from urllib import urlretrieve
@@ -17,7 +17,7 @@ except ImportError:
 
 #-------------------CREATE COLLECTION--------------------
 print 'Creating a collection...',
-flush()
+stdout.flush()
 client = pymongo.MongoClient()
 db = client[DB_NAME]
 if COLLECTION_NAME not in db.collection_names():
@@ -36,7 +36,7 @@ else:
 archive_name = split(EXAMPLE_DATA_URL)[-1]
 dir_name = archive_name[:archive_name.find('.')]
 print 'Attempting to download %s...' % EXAMPLE_DATA_URL,
-flush()
+stdout.flush()
 mkdir(dir_name)
 chdir(dir_name)
 try:
@@ -47,7 +47,8 @@ except IOError:
 
 print 'sucess!'
 print 'Attempting to extract %s...' % archive_name,
-flush()
+stdout.flush()
+
 
 tar = tarfile.open(archive_name)
 tar.extractall()
