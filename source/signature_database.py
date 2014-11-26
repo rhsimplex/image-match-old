@@ -134,13 +134,13 @@ class SignatureCollection(object):
         record['path'] = path
         signature = self.gis.generate_signature(path)
         record['signature'] = signature.tolist()
-        if self.integer_encoding:
-            words = self.words_to_int(self.get_words(signature, self.k, self.N))
-        else:
-            words = self.get_words(signature, self.k, self.N)
-
+        
+        words = self.get_words(signature, self.k, self.N)
         self.max_contrast(words)
         
+        if self.integer_encoding:
+            words = self.words_to_int(words)
+
         for i in range(self.N):
             record[''.join(['simple_word_', str(i)])] = words[i].tolist()
 
