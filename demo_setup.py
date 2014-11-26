@@ -46,7 +46,7 @@ except IOError:
     exit()
 
 print 'sucess!'
-print 'Attempting to extract %s...' % archive_name,
+print 'Extracting %s...' % archive_name,
 stdout.flush()
 
 
