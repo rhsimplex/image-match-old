@@ -54,7 +54,7 @@ tar = tarfile.open(archive_name)
 tar.extractall()
 print 'success! Deleting archive.'
 remove(archive_name)
-chdir(pardir())
+chdir(pardir)
 
 #-------------------BUILD DATABASE-----------------------
 print 'Adding images to database.'
