@@ -12,7 +12,7 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63, distance_cutoff=0.6,\
+    def __init__(self, collection, k=16, N=63, distance_cutoff=0.5,\
             integer_encoding=True):
         """Initialize SignatureCollection object
 
