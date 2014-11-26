@@ -53,7 +53,7 @@ stdout.flush()
 tar = tarfile.open(archive_name)
 tar.extractall()
 print 'success! Deleting archive.'
-os.remove(archive_name)
+remove(archive_name)
 chdir(pardir())
 
 #-------------------BUILD DATABASE-----------------------
