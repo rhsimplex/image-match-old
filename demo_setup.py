@@ -35,7 +35,7 @@ else:
 #-------------------DOWNLOAD DATA------------------------
 archive_name = split(EXAMPLE_DATA_URL)[-1]
 dir_name = archive_name[:archive_name.find('.')]
-print 'Attempting to download %s...' % EXAMPLE_DATA_URL,
+print 'Downloading %s...' % EXAMPLE_DATA_URL,
 stdout.flush()
 mkdir(dir_name)
 chdir(dir_name)
