@@ -56,5 +56,8 @@ os.remove(archive_name)
 chdir(pardir())
 
 #-------------------BUILD DATABASE-----------------------
+print 'Adding images to database.'
 sc = SignatureCollection(c)
 sc.add_images(dir_name, verbose=True)
+print 'Done!'
+print 'Now run the included example ipython notebook for demonstration'
