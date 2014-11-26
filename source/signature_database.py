@@ -77,7 +77,7 @@ class SignatureCollection(object):
         image_dir -- directory with images (note: directory should contain only
             images; no checking of any kind is done)
         drop_collection -- remove current entries prior to insertion (default False)
-        limit -- maximum records to create (not implemented)
+        limit -- maximum records to create, to nearest block (default None)
         verbose -- enable console output (default False)
         insert_block_size -- number of records to bulk insert at a time (default 100)
         """
@@ -91,11 +91,14 @@ class SignatureCollection(object):
         
         #Insert image signatures and words
         for i in range(0, len(image_paths), insert_block_size):
-            self.collection.insert(\
-                    map(self.make_record, image_paths[i : i + insert_block_size]))
-            if verbose:
-                print 'Inserted %i records.' % i
-        
+            if i < limit:
+                self.collection.insert(\
+                        map(self.make_record, image_paths[i : i + insert_block_size]))
+                if verbose:
+                    print 'Inserted %i records.' % i
+            else:
+                break
+
         if verbose:
             print 'Total %i records inserted.' % self.collection.count()
     
