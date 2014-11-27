@@ -118,7 +118,7 @@ class SignatureCollection(object):
             self.collection.insert(recs)
 
             if verbose:
-                print 'Inserted %i records.' % i + insert_block_size
+                print 'Inserted %s records.' % str(i + insert_block_size)
 
         if verbose:
             print 'Total %i records inserted.' % self.collection.count()
