@@ -3,7 +3,10 @@ import numpy as np
 from os import listdir
 from itertools import product
 from os.path import join
+from multiprocessing import Pool, cpu_count
 from pymongo.collection import Collection
+from functools import partial
+
 
 class SignatureCollection(object):
     """Wrapper class for MongoDB collection.
@@ -68,7 +71,7 @@ class SignatureCollection(object):
                     if field.find('simple') > -1]
 
     def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,\
-            insert_block_size=100):
+            insert_block_size=1000, n_processes = None):
         """Bulk adds images to database.
 
         Probably not very efficient, but fine for prototyping.
@@ -79,7 +82,10 @@ class SignatureCollection(object):
         drop_collection -- remove current entries prior to insertion (default False)
         limit -- maximum records to create, to nearest block (default None)
         verbose -- enable console output (default False)
-        insert_block_size -- number of records to bulk insert at a time (default 100)
+        insert_block_size -- number of records to bulk insert at a time (default 1000)
+        n_processes -- number of threads to use. If None, use number of CPUs (default none)
+            Note that this only applies to record generation.  Parallelism for insertion
+            is handled by the MongoDB internals.
         """
         if drop_collection:
             self.collection.remove({})
@@ -87,17 +93,32 @@ class SignatureCollection(object):
             if verbose:
                 print 'Collection contents dropped.'
 
+        if n_processes is None:
+            n_processes = cpu_count()
+
+        if verbose:
+            print 'Using %i processes.' % n_processes
+
+        pool = Pool(n_processes)
+
         image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
-        
+        if limit is None:
+            limit = len(image_paths)
+        if verbose:
+            print '%i files found in %s.' % (limit, image_dir)
+
+        partial_mr = partial(make_record,\
+                gis = self.gis, k=self.k, N=self.N)
         #Insert image signatures and words
         for i in range(0, len(image_paths), insert_block_size):
             if i < limit:
-                self.collection.insert(\
-                        map(self.make_record, image_paths[i : i + insert_block_size]))
-                if verbose:
-                    print 'Inserted %i records.' % i
-            else:
-                break
+                recs = pool.map(partial_mr, image_paths[i : i + insert_block_size])
+            else: 
+                recs = pool.map(partial_mr, image_paths[i : i + limit])
+            self.collection.insert(recs)
+
+            if verbose:
+                print 'Inserted %i records.' % i + insert_block_size
 
         if verbose:
             print 'Total %i records inserted.' % self.collection.count()
@@ -342,3 +363,106 @@ class SignatureCollection(object):
         #The 'plus one' here makes all digits positive, so that the 
         #integer represntation is strictly non-negative and unique
         return np.dot(word_array + 1, coding_vector)
+
+"""The following instance and static methods are reimplented as top-level
+functions to be used with multiprocessing.Pool. The static methods will
+eventually be refactored out of the class
+"""
+
+def make_record(path, gis, k, N, integer_encoding=True):
+    """Makes a record suitable for database insertion.
+
+    This non-class version of make_record is provided for 
+    CPU pooling. Functions passed to worker processes must
+    be picklable.
+
+    Keyword arguments:
+    path -- path to image
+    """
+    record = {}
+    record['path'] = path
+    signature = gis.generate_signature(path)
+    record['signature'] = signature.tolist()
+    
+    words = get_words(signature, k, N)
+    max_contrast(words)
+    
+    if integer_encoding:
+        words = words_to_int(words)
+
+    for i in range(N):
+        record[''.join(['simple_word_', str(i)])] = words[i].tolist()
+
+    return record
+
+
+def get_words(array, k, N):
+    """Gets N words of length k from an array.
+
+    Words may overlap.
+
+    Keyword arguments:
+    array -- array to split into words
+    k -- word length
+    N -- number of words
+    """
+    #generate starting positions of each word
+    word_positions = np.linspace(0, array.shape[0],\
+            N, endpoint=False).astype('int')
+
+    #check that inputs make sense
+    if k > array.shape[0]:
+        raise ValueError('Word length cannot be longer than array length')
+    if word_positions.shape[0] > array.shape[0]:
+        raise ValueError('Number of words cannot be more than array length')
+
+    #create empty words array
+    words = np.zeros((N, k)).astype('int8')
+
+    for i, pos in enumerate(word_positions):
+        if pos + k <= array.shape[0]:
+            words[i] = array[pos:pos+k]
+        else:
+            temp = array[pos:].copy()
+            temp.resize(k)
+            words[i] = temp
+
+    return words
+
+def words_to_int(word_array):
+    """Converts a simplified word to an integer
+
+    Encodes a k-byte word to int (as those returned by max_contrast).
+    First digit is least significant.
+    
+    Returns dot(word + 1, [1, 3, 9, 27 ...] ) for each word in word_array
+
+    e.g.:
+    [ -1, -1, -1] -> 0
+    [ 0,   0,  0] -> 13
+    [ 0,   1,  0] -> 16
+
+    Keyword arguments:
+    word_array -- N x k array of simple words
+    """
+    width = word_array.shape[1]
+    
+    #Three states (-1, 0, 1)
+    coding_vector = 3**np.arange(width)
+    
+    #The 'plus one' here makes all digits positive, so that the 
+    #integer represntation is strictly non-negative and unique
+    return np.dot(word_array + 1, coding_vector)
+
+def max_contrast(array):
+    """Sets all positive values to one and all negative values to -1.
+
+    Needed for first pass lookup on word table.
+
+    Keyword arguments:
+    array -- target array
+    """
+    array[array > 0] = 1
+    array[array < 0] = -1
+
+    return None
