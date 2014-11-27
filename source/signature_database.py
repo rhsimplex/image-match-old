@@ -114,7 +114,7 @@ class SignatureCollection(object):
             if i < limit:
                 recs = pool.map(partial_mr, image_paths[i : i + insert_block_size])
             else: 
-                recs = pool.map(partial_mr, image_paths[i : i + limit])
+                recs = pool.map(partial_mr, image_paths[i : limit])
             self.collection.insert(recs)
 
             if verbose:
