@@ -253,6 +253,65 @@ class SignatureCollection(object):
                     print 'No matches found.'
         return ()
                 
+    def parallel_find(self, path, n_parallel_words=2):
+        """Gets tne next match(es).
+        
+        Searches among words up to the max_words with highest standard deviation.
+        the collection is split into n_parallel_words
+
+        Keyword arguments:
+        path -- path to image
+        n_parallel_words -- number of words to scan in parallel (default 2)
+        """
+
+        #Don't encode words yet because we need to compute stds
+        record = make_record(path, self.gis, self.k, self.N, integer_encoding=False)
+         
+        #Generate standard deviations of each word vector.
+        stds = {}
+        for word_name in self.index_names:
+            stds[word_name] = np.std(record[word_name])
+
+        #get inital largest std words
+        init_max_words = []
+        for i in range(n_parallel_words):
+            init_max_words.append(max(stds))
+            stds.pop(init_max_words[-1])
+
+        #generate the initial n_parallel_words cursors
+        cursors = [self.collection.find({word:words_to_int(np.array([record[word]]))[0]}, fields=['_id','signature','path'])\
+                for word in init_max_words]
+        
+        #create a pool of processes
+        pool = Pool()
+        
+        #define partial function for multiprocessing.Pool compatibility
+        partial_gnm = partial(get_next_match, signature=record['signature'], cutoff=self.distance_cutoff)
+        
+
+        while True:
+            #check if any cursors are dead and delete them
+            [cursors.remove(cursor) for cursor in cursors if not cursor.alive]
+            
+            #put new cursors in if necessary
+            while len(cursors) < n_parallel_words:
+                #try to get more words if possible
+                try:
+                    new_word = max(stds)
+                    stds.pop(new_word)
+                    cursors.append(self.collection.find({new_word:words_to_int(np.array([record[word]]))[0]},\
+                            fields=['_id','signature','path']))
+                #if not, append nothing
+                except IndexError:
+                    pass
+
+            #if all there are no more words, kill iterator
+            if len(cursors) == 0:
+                raise StopIteration
+            
+            #get next match from all living cursors
+            yield pool.map(partial_gnm, cursors)
+
 
     def find_word_matches(self, record, matches=1):
         """Returns records which match on at least ONE simplified word.
@@ -465,4 +524,39 @@ def max_contrast(array):
     array[array > 0] = 1
     array[array < 0] = -1
 
+    return None
+
+def normalized_distance(target_array, vec):
+    """Compute normalized distance to many points.
+
+    Computes || vec - b || / ( ||vec|| + ||b||) for every b in target_array
+
+    Keyword arguments:
+    target_array -- N x m array
+    vec -- array of size m
+    """
+    #use broadcasting
+    return np.linalg.norm(vec - target_array, axis=1)/\
+            (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
+
+def get_next_match(curs, signature, cutoff=0.5):
+    """Scans a cursor for word matches below a distance threshold.
+
+    Returns the next match if applicable, None otherwise.
+
+    Note that placing this function outside the SignatureCollection
+    class breaks encapsulation.  This is done for compatibility with 
+    multiprocessing.Pool
+
+    Keyword arguments:
+    curs -- a Pymongo cursor object
+    signature -- signature array to match against
+    cutoff -- normalized distance limit (default 0.5)
+    """
+    while curs.alive:
+        rec = curs.next()
+        if normalized_distance([signature],\
+                np.array(record['signature'], dtype='int8'))[0] < cutoff:
+            return rec
+        
     return None
