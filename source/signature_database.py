@@ -3,7 +3,7 @@ import numpy as np
 from os import listdir
 from itertools import product
 from os.path import join
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, Process, Queue
 from pymongo.collection import Collection
 from functools import partial
 
@@ -281,15 +281,12 @@ class SignatureCollection(object):
         #generate the initial n_parallel_words cursors
         cursors = [self.collection.find({word:words_to_int(np.array([record[word]]))[0]}, fields=['_id','signature','path'])\
                 for word in init_max_words]
-        
-        #create a pool of processes
-        pool = Pool()
-        
-        #define partial function for multiprocessing.Pool compatibility
-        partial_gnm = partial(get_next_match, signature=record['signature'], cutoff=self.distance_cutoff)
-        
 
+        #begin iterabor
         while True:
+            #create an empty queue
+            q = Queue()
+
             #check if any cursors are dead and delete them
             [cursors.remove(cursor) for cursor in cursors if not cursor.alive]
             
@@ -309,9 +306,22 @@ class SignatureCollection(object):
             if len(cursors) == 0:
                 raise StopIteration
             
-            #get next match from all living cursors
-            yield pool.map(partial_gnm, cursors)
+            #build children processes
+            p = [Process(target=get_next_match, args=(q, cursor, record['signature'], self.distance_cutoff))]
+            
+            for process in p:
+                process.start()
 
+            for process in p:
+                process.join()
+
+i           #collect results
+            l = []
+            while not q.empty():
+                l.append(q.get())
+
+            #yield a set of results
+            yield l
 
     def find_word_matches(self, record, matches=1):
         """Returns records which match on at least ONE simplified word.
@@ -539,7 +549,7 @@ def normalized_distance(target_array, vec):
     return np.linalg.norm(vec - target_array, axis=1)/\
             (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
-def get_next_match(curs, signature, cutoff=0.5):
+def get_next_match(q, curs, signature, cutoff=0.5):
     """Scans a cursor for word matches below a distance threshold.
 
     Returns the next match if applicable, None otherwise.
@@ -556,7 +566,5 @@ def get_next_match(curs, signature, cutoff=0.5):
     while curs.alive:
         rec = curs.next()
         if normalized_distance([signature],\
-                np.array(record['signature'], dtype='int8'))[0] < cutoff:
-            return rec
-        
-    return None
+                np.array(rec['signature'], dtype='int8'))[0] < cutoff:
+            q.put(rec)
