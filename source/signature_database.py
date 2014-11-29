@@ -254,7 +254,7 @@ class SignatureCollection(object):
         return ()
                 
     def parallel_find(self, path, n_parallel_words=2):
-        """Gets tne next match(es).
+        """Makes an iterator to gets tne next match(es).
         
         Searches among words up to the max_words with highest standard deviation.
         the collection is split into n_parallel_words
