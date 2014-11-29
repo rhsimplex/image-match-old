@@ -253,12 +253,9 @@ class SignatureCollection(object):
                     print 'No matches found.'
         return ()
                 
-    def parallel_find(self, path, n_parallel_words=2):
+    def parallel_find(self, path, n_parallel_words=2, verbose=False):
         """Makes an iterator to gets tne next match(es).
         
-        Searches among words up to the max_words with highest standard deviation.
-        the collection is split into n_parallel_words
-
         Keyword arguments:
         path -- path to image
         n_parallel_words -- number of words to scan in parallel (default 2)
@@ -277,18 +274,24 @@ class SignatureCollection(object):
         for i in range(n_parallel_words):
             init_max_words.append(max(stds))
             stds.pop(init_max_words[-1])
+        if verbose:
+            print 'Initial words and stds:'
+            for word in init_max_words:
+                print '%s %i %f' % (word, words_to_int(np.array([record[word]]))[0],  np.std(record[word]))
 
         #generate the initial n_parallel_words cursors
         cursors = [self.collection.find({word:words_to_int(np.array([record[word]]))[0]}, fields=['_id','signature','path'])\
                 for word in init_max_words]
 
-        #begin iterabor
+        #begin iterator
         while True:
-            #create an empty queue
-            q = Queue()
+            #create an empty queue for cursors and results
+            results_q = Queue()
 
             #check if any cursors are dead and delete them
             [cursors.remove(cursor) for cursor in cursors if not cursor.alive]
+            if verbose:
+                print '%i cursors dead.' % (n_parallel_words - len(cursors))
             
             #put new cursors in if necessary
             while len(cursors) < n_parallel_words:
@@ -307,18 +310,22 @@ class SignatureCollection(object):
                 raise StopIteration
             
             #build children processes
-            p = [Process(target=get_next_match, args=(q, cursor, record['signature'], self.distance_cutoff))]
+            p = [Process(target=get_next_match, args=(results_q, cursor, record['signature'], self.distance_cutoff)) for cursor in cursors]
             
             for process in p:
                 process.start()
-
+            
+            #there may be a deadlock danger here (joining before emptying
+            #the queue). See 'joining processes that use queues':
+            #https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.dummy
             for process in p:
                 process.join()
 
             #collect results
             l = []
-            while not q.empty():
-                l.append(q.get())
+            while not results_q.empty():
+                l.append(results_q.get())
+            
 
             #yield a set of results
             yield l
@@ -566,6 +573,7 @@ def get_next_match(q, curs, signature, cutoff=0.5):
     """
     while curs.alive:
         rec = curs.next()
-        if normalized_distance([signature],\
-                np.array(rec['signature'], dtype='int8'))[0] < cutoff:
-            q.put(rec)
+        dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
+        if dist < cutoff:
+            q.put((dist, rec['path'], rec['_id']))
+    print curs.alive
