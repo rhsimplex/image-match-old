@@ -559,6 +559,7 @@ def get_next_match(q, curs, signature, cutoff=0.5):
     multiprocessing.Pool
 
     Keyword arguments:
+    q -- a multiprocessing queue
     curs -- a Pymongo cursor object
     signature -- signature array to match against
     cutoff -- normalized distance limit (default 0.5)
