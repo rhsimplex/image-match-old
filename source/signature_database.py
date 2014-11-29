@@ -315,7 +315,7 @@ class SignatureCollection(object):
             for process in p:
                 process.join()
 
-i           #collect results
+            #collect results
             l = []
             while not q.empty():
                 l.append(q.get())
