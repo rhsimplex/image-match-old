@@ -4,7 +4,9 @@ from os import listdir
 from itertools import product
 from os.path import join
 from multiprocessing import Pool, cpu_count, Process, Queue
+from multiprocessing.managers import Queue as managerQueue
 from pymongo.collection import Collection
+from pymongo.cursor import Cursor
 from functools import partial
 
 
@@ -269,63 +271,71 @@ class SignatureCollection(object):
         for word_name in self.index_names:
             stds[word_name] = np.std(record[word_name])
 
-        #get inital largest std words
-        init_max_words = []
-        for i in range(n_parallel_words):
-            init_max_words.append(max(stds))
-            stds.pop(init_max_words[-1])
-        if verbose:
-            print 'Initial words and stds:'
-            for word in init_max_words:
-                print '%s %i %f' % (word, words_to_int(np.array([record[word]]))[0],  np.std(record[word]))
+        keys = list(stds.keys())
+        vals = list(stds.values())
+        #Fill a queue with cursors in order of highest std
+        initial_q = managerQueue.Queue()
+        while len(stds) > 0:
+            max_val = max(vals)
+            max_pos = vals.index(max_val)
+            max_word = keys[max_pos]
+            
+            stds.pop(max_word)
+            vals.pop(max_pos)
+            keys.pop(max_pos)
 
-        #generate the initial n_parallel_words cursors
-        cursors = [self.collection.find({word:words_to_int(np.array([record[word]]))[0]}, fields=['_id','signature','path'])\
-                for word in init_max_words]
+            if verbose:
+                print '%s %f' % (max_word, max_val)
+                print record[max_word]
+
+            initial_q.put(\
+                    self.collection.find({max_word:words_to_int(np.array([record[max_word]]))[0]},\
+                    fields=['_id','signature','path']))
+        if verbose:
+            print 'Queue length: %i' % initial_q.qsize()
+
+        #create an empty queue for results
+        results_q = Queue()
+        
+        #create a set of unique results, using MongoDB _id field
+        unique_results = set()
 
         #begin iterator
         while True:
-            #create an empty queue for cursors and results
-            results_q = Queue()
-
-            #check if any cursors are dead and delete them
-            [cursors.remove(cursor) for cursor in cursors if not cursor.alive]
-            if verbose:
-                print '%i cursors dead.' % (n_parallel_words - len(cursors))
-            
-            #put new cursors in if necessary
-            while len(cursors) < n_parallel_words:
-                #try to get more words if possible
-                try:
-                    new_word = max(stds)
-                    stds.pop(new_word)
-                    cursors.append(self.collection.find({new_word:words_to_int(np.array([record[word]]))[0]},\
-                            fields=['_id','signature','path']))
-                #if not, append nothing
-                except IndexError:
-                    pass
-
-            #if all there are no more words, kill iterator
-            if len(cursors) == 0:
+            #if all there are no more cursors, kill iterator
+            if initial_q.empty():
                 raise StopIteration
             
-            #build children processes
-            p = [Process(target=get_next_match, args=(results_q, cursor, record['signature'], self.distance_cutoff)) for cursor in cursors]
+            #build children processes, taking cursors from in_process queue first, then initial queue
+            p = []
+            while len(p) < n_parallel_words:
+                if not initial_q.empty(): 
+                    p.append(Process(target=get_next_match, args=(results_q, initial_q.get(), record['signature'], self.distance_cutoff)))
+
+            if verbose:
+                print '%i fresh cursors remain' % initial_q.qsize()
+ 
+            if len(p) > 0:
+                for process in p:
+                    process.start()
+            else:
+                raise StopIteration
             
-            for process in p:
-                process.start()
+
+            #collect results, taking care not to return the same result twice
+            l = []
+            while not results_q.empty():
+                results = results_q.get()
+                for key in results.keys():
+                    if key not in unique_results:
+                        unique_results.add(key)
+                        l.append(results[key])
             
             #there may be a deadlock danger here (joining before emptying
             #the queue). See 'joining processes that use queues':
             #https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.dummy
             for process in p:
                 process.join()
-
-            #collect results
-            l = []
-            while not results_q.empty():
-                l.append(results_q.get())
-            
 
             #yield a set of results
             yield l
@@ -556,14 +566,14 @@ def normalized_distance(target_array, vec):
     return np.linalg.norm(vec - target_array, axis=1)/\
             (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
-def get_next_match(q, curs, signature, cutoff=0.5):
+def get_next_match(result_q, curs, signature, cutoff=0.5):
     """Scans a cursor for word matches below a distance threshold.
 
-    Returns the next match if applicable, None otherwise.
+    Exhausts a cursor, possibly enqueuing many matches
 
     Note that placing this function outside the SignatureCollection
     class breaks encapsulation.  This is done for compatibility with 
-    multiprocessing.Pool
+    multiprocessing.
 
     Keyword arguments:
     q -- a multiprocessing queue
@@ -571,9 +581,10 @@ def get_next_match(q, curs, signature, cutoff=0.5):
     signature -- signature array to match against
     cutoff -- normalized distance limit (default 0.5)
     """
+    matches = {}
     while curs.alive:
         rec = curs.next()
         dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
         if dist < cutoff:
-            q.put((dist, rec['path'], rec['_id']))
-    print curs.alive
+            matches[rec['_id']] = (dist, rec['path'])
+    result_q.put(matches)
