@@ -582,9 +582,12 @@ def get_next_match(result_q, curs, signature, cutoff=0.5):
     cutoff -- normalized distance limit (default 0.5)
     """
     matches = {}
-    while curs.alive:
+    try:
         rec = curs.next()
         dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
         if dist < cutoff:
             matches[rec['_id']] = (dist, rec['path'])
+    except StopIteration:
+        #do nothing...the cursor is exhausted
+        pass
     result_q.put(matches)
