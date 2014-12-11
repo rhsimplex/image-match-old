@@ -150,19 +150,22 @@ class SignatureCollection(object):
         """
         self.collection.insert(make_record(path, gis=self.gis, k=self.k, N=self.N))
 
-    def parallel_find(self, path, n_parallel_words=2, verbose=False):
+    def parallel_find(self, path, n_parallel_words=1, verbose=False):
         """Makes an iterator to gets tne next match(es).
-        
+
+        Use only one parallel word for now. Multiple processes work,
+        but thread join will hang on the last word
+
         Keyword arguments:
         path -- path to image
-        n_parallel_words -- number of words to scan in parallel (default 2)
+        n_parallel_words -- number of words to scan in parallel (default 1)
         """
 
         # Don't encode words yet because we need to compute stds
         record = make_record(path, self.gis, self.k, self.N, integer_encoding=False)
 
         # Generate standard deviations of each word vector.
-        stds = {}
+        stds = dict()
         for word_name in self.index_names:
             stds[word_name] = np.std(record[word_name])
 
@@ -203,7 +206,7 @@ class SignatureCollection(object):
                 raise StopIteration
 
             # build children processes, taking cursors from in_process queue first, then initial queue
-            p = []
+            p = list()
             while len(p) < n_parallel_words:
                 if not initial_q.empty():
                     p.append(Process(target=get_next_match,
@@ -222,7 +225,7 @@ class SignatureCollection(object):
                 raise StopIteration
 
             # collect results, taking care not to return the same result twice
-            l = []
+            l = list()
             while not results_q.empty():
                 results = results_q.get()
                 for key in results.keys():
@@ -230,9 +233,7 @@ class SignatureCollection(object):
                         unique_results.add(key)
                         l.append(results[key])
 
-            # there may be a deadlock danger here (joining before emptying
-            # the queue). See 'joining processes that use queues':
-            # https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.dummy
+            # join children
             for process in p:
                 process.join()
 
@@ -350,7 +351,7 @@ def normalized_distance(target_array, vec):
     target_array -- N x m array
     vec -- array of size m
     """
-    #use broadcasting
+    # use broadcasting
     return np.linalg.norm(vec - target_array, axis=1)\
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
@@ -370,13 +371,14 @@ def get_next_match(result_q, curs, signature, cutoff=0.5):
     signature -- signature array to match against
     cutoff -- normalized distance limit (default 0.5)
     """
-    matches = {}
-    try:
-        rec = curs.next()
-        dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
-        if dist < cutoff:
-            matches[rec['_id']] = (dist, rec['path'])
-    except StopIteration:
-        # do nothing...the cursor is exhausted
-        pass
-    result_q.put(matches)
+    matches = dict()
+    while True:
+        try:
+            rec = curs.next()
+            dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
+            if dist < cutoff:
+                matches[rec['_id']] = (dist, rec['path'], rec['_id'])
+                result_q.put(matches)
+        except StopIteration:
+            # do nothing...the cursor is exhausted
+            break
