@@ -17,8 +17,8 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63, distance_cutoff=0.5,\
-            integer_encoding=True):
+    def __init__(self, collection, k=16, N=63,
+                 distance_cutoff=0.5, integer_encoding=True):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -34,16 +34,16 @@ class SignatureCollection(object):
         integer_encoding -- save words as integers instead of arrays (default True)
         """
 
-        #Check that collection is a MongoDB collection
+        # Check that collection is a MongoDB collection
         if type(collection) is not Collection:
             raise TypeError('Expected MongoDB collection, got %r' % type(collection))
-        
+
         self.collection = collection
-        
-        #Use default ImageSignature parameters for now
+
+        # Use default ImageSignature parameters for now
         self.gis = ImageSignature()
 
-        #Check integer inputs
+        # Check integer inputs
         if type(k) is not int:
             raise TypeError('k should be an integer')
         if type(N) is not int:
@@ -51,8 +51,8 @@ class SignatureCollection(object):
 
         self.k = k
         self.N = N
-        
-        #Check float input
+
+        # Check float input
         if type(distance_cutoff) is not float:
             raise TypeError('distance_cutoff should be a float')
         if distance_cutoff < 0.:
@@ -60,20 +60,20 @@ class SignatureCollection(object):
 
         self.distance_cutoff = distance_cutoff
 
-        #Check bool input
+        # Check bool input
         if type(integer_encoding) is not bool:
             raise TypeError('integer_encoding should be boolean (got %r)')\
-                    % type(integer_encoding)
-        
+                  % type(integer_encoding)
+
         self.integer_encoding = integer_encoding
 
-        #Exract index fields, if any exist yet
+        # Extract index fields, if any exist yet
         if self.collection.count() > 0:
-            self.index_names = [field for field in self.collection.find_one({}).keys()\
-                    if field.find('simple') > -1]
+            self.index_names = [field for field in self.collection.find_one({}).keys()
+                                if field.find('simple') > -1]
 
-    def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,\
-            insert_block_size=1000, n_processes = None):
+    def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,
+                   insert_block_size=1000, n_processes=None):
         """Bulk adds images to database.
 
         Probably not very efficient, but fine for prototyping.
@@ -109,13 +109,13 @@ class SignatureCollection(object):
         if verbose:
             print '%i files found in %s.' % (limit, image_dir)
 
-        partial_mr = partial(make_record,\
-                gis = self.gis, k=self.k, N=self.N)
-        #Insert image signatures and words
+        partial_mr = partial(make_record,
+                             gis=self.gis, k=self.k, N=self.N)
+        # Insert image signatures and words
         for i in range(0, len(image_paths), insert_block_size):
             if i < limit:
                 recs = pool.map(partial_mr, image_paths[i : i + insert_block_size])
-            else: 
+            else:
                 recs = pool.map(partial_mr, image_paths[i : limit])
             self.collection.insert(recs)
 
@@ -124,7 +124,7 @@ class SignatureCollection(object):
 
         if verbose:
             print 'Total %i records inserted.' % self.collection.count()
-    
+
         self.index_collection(verbose=verbose)
 
     def index_collection(self, verbose=False):
@@ -133,8 +133,8 @@ class SignatureCollection(object):
         Keyword arguments:
         verbose -- enable console output (default False)
         """
-        
-        #Index on words
+
+        # Index on words
         self.index_names = [field for field in self.collection.find_one({}).keys()\
                 if field.find('simple') > -1]
         for name in self.index_names:
@@ -148,113 +148,8 @@ class SignatureCollection(object):
         Keyword arguments:
         path -- path to image
         """
-        self.collection.insert(self.make_record(path))
+        self.collection.insert(make_record(path, gis=self.gis, k=self.k, N=self.N))
 
-    def make_record(self, path):
-        """Makes a record suitable for database insertion.
-
-        Keyword arguments:
-        path -- path to image
-        """
-        record = {}
-        record['path'] = path
-        signature = self.gis.generate_signature(path)
-        record['signature'] = signature.tolist()
-        
-        words = self.get_words(signature, self.k, self.N)
-        self.max_contrast(words)
-        
-        if self.integer_encoding:
-            words = self.words_to_int(words)
-
-        for i in range(self.N):
-            record[''.join(['simple_word_', str(i)])] = words[i].tolist()
-
-        return record
-    
-    def find_matches(self, path, num_words=1):
-        """Finds matching images.
-
-        First gets entries with matches on at least one word, then compares
-        signatures.
-
-        Keyword arguments:
-        path -- path to target image
-        num_words -- number of words to match before considering (default 1)
-        """
-
-        #Generate record (signature and words)
-        record = self.make_record(path)
-
-        #Find records which match on at least 1 word
-        curs = self.find_word_matches(record, matches=num_words)
-        t = list(curs)
-
-        #Extract signatures and paths
-        sigs = np.array(map(lambda x: x['signature'], t), dtype='int8')
-        paths = np.array(map(lambda x: x['path'], t))
-
-        #Compute distances
-        d = self.normalized_distance(sigs, np.array(record['signature'], dtype='int8'))
-
-        #Get postions of matching records
-        w = d < self.distance_cutoff
-        
-        return zip(d[w], paths[w])
-
-    def find_first_match(self, path, max_words=20, verbose=False):
-        """Finds the first match quickly.
-
-        Searches indexes by order of variance. This assumes that a word with high
-        variance corresponds to high-feature regions.
-
-        Keyword arguments:
-        path -- path to image
-        max_words -- maximum number of words to search for match
-        """
-        if verbose:
-            print 'Generating image signature...'
-        record = self.make_record(path)
-        stds = {}
-
-        #Generate standard deviations of each word vector.
-        for word_name in self.index_names:
-            stds[word_name] = np.std(record[word_name])
-        
-        #Try to match on the n = max_words best (highest std) words
-        for _n in range(max_words):
-            most_significant_word = max(stds)
-            stds.pop(most_significant_word)
-            
-            if verbose:
-                print 'Trying %s...' % most_significant_word
-                print record[most_significant_word]
-                
-            #Get matches from collection
-            word_matches = list(self.collection.find({most_significant_word:\
-                    record[most_significant_word]}, fields=['signature','path']))
-            
-            if verbose:
-                print '%i matches found. Computing distances...' % len(word_matches)
-
-            if len(word_matches) > 0:
-                #Extract signatures and paths
-                sigs = np.array(map(lambda x: x['signature'],\
-                        word_matches), dtype='int8')
-                paths = np.array(map(lambda x: x['path'], word_matches))
-
-                #Compute distances
-                d = self.normalized_distance(sigs,\
-                        np.array(record['signature'], dtype='int8'))
-                minpos = np.argmin(d)
-                if d[minpos] < self.distance_cutoff:
-                    if verbose:
-                        print 'Match found!'
-                    return (d[minpos], paths[minpos])
-                if verbose:
-                    print 'No matches found.'
-        return ()
-                
     def parallel_find(self, path, n_parallel_words=2, verbose=False):
         """Makes an iterator to gets tne next match(es).
         
@@ -263,23 +158,23 @@ class SignatureCollection(object):
         n_parallel_words -- number of words to scan in parallel (default 2)
         """
 
-        #Don't encode words yet because we need to compute stds
+        # Don't encode words yet because we need to compute stds
         record = make_record(path, self.gis, self.k, self.N, integer_encoding=False)
-         
-        #Generate standard deviations of each word vector.
+
+        # Generate standard deviations of each word vector.
         stds = {}
         for word_name in self.index_names:
             stds[word_name] = np.std(record[word_name])
 
         keys = list(stds.keys())
         vals = list(stds.values())
-        #Fill a queue with cursors in order of highest std
+        # Fill a queue with cursors in order of highest std
         initial_q = managerQueue.Queue()
         while len(stds) > 0:
             max_val = max(vals)
             max_pos = vals.index(max_val)
             max_word = keys[max_pos]
-            
+
             stds.pop(max_word)
             vals.pop(max_pos)
             keys.pop(max_pos)
@@ -288,41 +183,45 @@ class SignatureCollection(object):
                 print '%s %f' % (max_word, max_val)
                 print record[max_word]
 
-            initial_q.put(\
-                    self.collection.find({max_word:words_to_int(np.array([record[max_word]]))[0]},\
-                    fields=['_id','signature','path']))
+            initial_q.put(
+                self.collection.find(
+                    {max_word: words_to_int(np.array([record[max_word]]))[0]},
+                    fields=['_id', 'signature', 'path']))
         if verbose:
             print 'Queue length: %i' % initial_q.qsize()
 
-        #create an empty queue for results
+        # create an empty queue for results
         results_q = Queue()
-        
-        #create a set of unique results, using MongoDB _id field
+
+        # create a set of unique results, using MongoDB _id field
         unique_results = set()
 
-        #begin iterator
+        # begin iterator
         while True:
-            #if all there are no more cursors, kill iterator
+            # if all there are no more cursors, kill iterator
             if initial_q.empty():
                 raise StopIteration
-            
-            #build children processes, taking cursors from in_process queue first, then initial queue
+
+            # build children processes, taking cursors from in_process queue first, then initial queue
             p = []
             while len(p) < n_parallel_words:
-                if not initial_q.empty(): 
-                    p.append(Process(target=get_next_match, args=(results_q, initial_q.get(), record['signature'], self.distance_cutoff)))
+                if not initial_q.empty():
+                    p.append(Process(target=get_next_match,
+                                     args=(results_q,
+                                           initial_q.get(),
+                                           record['signature'],
+                                           self.distance_cutoff)))
 
             if verbose:
                 print '%i fresh cursors remain' % initial_q.qsize()
- 
+
             if len(p) > 0:
                 for process in p:
                     process.start()
             else:
                 raise StopIteration
-            
 
-            #collect results, taking care not to return the same result twice
+            # collect results, taking care not to return the same result twice
             l = []
             while not results_q.empty():
                 results = results_q.get()
@@ -330,130 +229,16 @@ class SignatureCollection(object):
                     if key not in unique_results:
                         unique_results.add(key)
                         l.append(results[key])
-            
-            #there may be a deadlock danger here (joining before emptying
-            #the queue). See 'joining processes that use queues':
-            #https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.dummy
+
+            # there may be a deadlock danger here (joining before emptying
+            # the queue). See 'joining processes that use queues':
+            # https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.dummy
             for process in p:
                 process.join()
 
-            #yield a set of results
+            # yield a set of results
             yield l
 
-    def find_word_matches(self, record, matches=1):
-        """Returns records which match on at least ONE simplified word.
-
-        Keyword arguments:
-        record -- dict created by self.make_record
-        matches -- minimum number of words to match. Matching on multiple
-            words is currently very slow.
-        """
-        #return records which match any word
-        if matches==1:
-            return self.collection.find({'$or':[{name:record[name]}\
-                    for name in self.index_names]}, fields=['signature','path'])
-        #the below works in principle but is extremely slow
-        else:
-            and_queries = []
-            for t in product(self.index_names, repeat=matches):
-                and_queries.append({'$and': [\
-                        {t[0]:record[t[0]]},\
-                        {t[1]:record[t[1]]} ]})
-            return self.collection.find({'$or': and_queries})
-        
-        
-    @staticmethod
-    def normalized_distance(target_array, vec):
-        """Compute normalized distance to many points.
-
-        Computes || vec - b || / ( ||vec|| + ||b||) for every b in target_array
-
-        Keyword arguments:
-        target_array -- N x m array
-        vec -- array of size m
-        """
-        #use broadcasting
-        return np.linalg.norm(vec - target_array, axis=1)/\
-                (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
-    
-    @staticmethod
-    def get_words(array, k, N):
-        """Gets N words of length k from an array.
-
-        Words may overlap.
-
-        Keyword arguments:
-        array -- array to split into words
-        k -- word length
-        N -- number of words
-        """
-        #generate starting positions of each word
-        word_positions = np.linspace(0, array.shape[0],\
-                N, endpoint=False).astype('int')
-
-        #check that inputs make sense
-        if k > array.shape[0]:
-            raise ValueError('Word length cannot be longer than array length')
-        if word_positions.shape[0] > array.shape[0]:
-            raise ValueError('Number of words cannot be more than array length')
-
-        #create empty words array
-        words = np.zeros((N, k)).astype('int8')
-
-        for i, pos in enumerate(word_positions):
-            if pos + k <= array.shape[0]:
-                words[i] = array[pos:pos+k]
-            else:
-                temp = array[pos:].copy()
-                temp.resize(k)
-                words[i] = temp
-
-        return words
-
-    @staticmethod
-    def max_contrast(array):
-        """Sets all positive values to one and all negative values to -1.
-
-        Needed for first pass lookup on word table.
-
-        Keyword arguments:
-        array -- target array
-        """
-        array[array > 0] = 1
-        array[array < 0] = -1
-
-        return None
-
-    @staticmethod
-    def words_to_int(word_array):
-        """Converts a simplified word to an integer
-
-        Encodes a k-byte word to int (as those returned by max_contrast).
-        First digit is least significant.
-        
-        Returns dot(word + 1, [1, 3, 9, 27 ...] ) for each word in word_array
-
-        e.g.:
-        [ -1, -1, -1] -> 0
-        [ 0,   0,  0] -> 13
-        [ 0,   1,  0] -> 16
-
-        Keyword arguments:
-        word_array -- N x k array of simple words
-        """
-        width = word_array.shape[1]
-        
-        #Three states (-1, 0, 1)
-        coding_vector = 3**np.arange(width)
-        
-        #The 'plus one' here makes all digits positive, so that the 
-        #integer represntation is strictly non-negative and unique
-        return np.dot(word_array + 1, coding_vector)
-
-"""The following instance and static methods are reimplented as top-level
-functions to be used with multiprocessing.Pool. The static methods will
-eventually be refactored out of the class
-"""
 
 def make_record(path, gis, k, N, integer_encoding=True):
     """Makes a record suitable for database insertion.
@@ -465,14 +250,14 @@ def make_record(path, gis, k, N, integer_encoding=True):
     Keyword arguments:
     path -- path to image
     """
-    record = {}
+    record = dict()
     record['path'] = path
     signature = gis.generate_signature(path)
     record['signature'] = signature.tolist()
-    
+
     words = get_words(signature, k, N)
     max_contrast(words)
-    
+
     if integer_encoding:
         words = words_to_int(words)
 
@@ -492,17 +277,17 @@ def get_words(array, k, N):
     k -- word length
     N -- number of words
     """
-    #generate starting positions of each word
-    word_positions = np.linspace(0, array.shape[0],\
-            N, endpoint=False).astype('int')
+    # generate starting positions of each word
+    word_positions = np.linspace(0, array.shape[0],
+                                 N, endpoint=False).astype('int')
 
-    #check that inputs make sense
+    # check that inputs make sense
     if k > array.shape[0]:
         raise ValueError('Word length cannot be longer than array length')
     if word_positions.shape[0] > array.shape[0]:
         raise ValueError('Number of words cannot be more than array length')
 
-    #create empty words array
+    # create empty words array
     words = np.zeros((N, k)).astype('int8')
 
     for i, pos in enumerate(word_positions):
@@ -514,6 +299,7 @@ def get_words(array, k, N):
             words[i] = temp
 
     return words
+
 
 def words_to_int(word_array):
     """Converts a simplified word to an integer
@@ -532,13 +318,14 @@ def words_to_int(word_array):
     word_array -- N x k array of simple words
     """
     width = word_array.shape[1]
-    
-    #Three states (-1, 0, 1)
+
+    # Three states (-1, 0, 1)
     coding_vector = 3**np.arange(width)
-    
-    #The 'plus one' here makes all digits positive, so that the 
-    #integer represntation is strictly non-negative and unique
+
+    # The 'plus one' here makes all digits positive, so that the
+    # integer represntation is strictly non-negative and unique
     return np.dot(word_array + 1, coding_vector)
+
 
 def max_contrast(array):
     """Sets all positive values to one and all negative values to -1.
@@ -553,6 +340,7 @@ def max_contrast(array):
 
     return None
 
+
 def normalized_distance(target_array, vec):
     """Compute normalized distance to many points.
 
@@ -563,8 +351,9 @@ def normalized_distance(target_array, vec):
     vec -- array of size m
     """
     #use broadcasting
-    return np.linalg.norm(vec - target_array, axis=1)/\
-            (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
+    return np.linalg.norm(vec - target_array, axis=1)\
+        / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
+
 
 def get_next_match(result_q, curs, signature, cutoff=0.5):
     """Scans a cursor for word matches below a distance threshold.
@@ -588,6 +377,6 @@ def get_next_match(result_q, curs, signature, cutoff=0.5):
         if dist < cutoff:
             matches[rec['_id']] = (dist, rec['path'])
     except StopIteration:
-        #do nothing...the cursor is exhausted
+        # do nothing...the cursor is exhausted
         pass
     result_q.put(matches)
