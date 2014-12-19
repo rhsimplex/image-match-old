@@ -144,11 +144,17 @@ class SignatureCollection(object):
 
     def add_image(self, path):
         """Inserts a single image.
-        
+
+        Creates indexes if this is the first entry.
+
         Keyword arguments:
         path -- path to image
         """
         self.collection.insert(make_record(path, gis=self.gis, k=self.k, N=self.N))
+
+        # if the collection has no indexes (except possibly '_id'), build them
+        if len(self.collection.index_information()) <= 1:
+            self.index_collection()
 
     def parallel_find(self, path, n_parallel_words=1, verbose=False):
         """Makes an iterator to gets tne next match(es).
