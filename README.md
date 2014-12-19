@@ -10,6 +10,11 @@ For now, how to get a test database running:
 * Numpy, skimage
 
 ### How do I get set up? ###
+Fast demo:
+1. Clone repository
+2. Run example.py. The comments explain basic usage.
+
+Longer demo:
 1. Clone repository
 2. Run setup script: `python demo_setup.py`. This may take awhile, especially downloading the images.
 3. Run the ipython notebook: `ipython notebook image_match_demo.ipynb`
