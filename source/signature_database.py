@@ -1,12 +1,10 @@
 from goldberg import ImageSignature
 import numpy as np
 from os import listdir
-from itertools import product
 from os.path import join
 from multiprocessing import Pool, cpu_count, Process, Queue
 from multiprocessing.managers import Queue as managerQueue
 from pymongo.collection import Collection
-from pymongo.cursor import Cursor
 from functools import partial
 
 
@@ -18,7 +16,8 @@ class SignatureCollection(object):
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
     def __init__(self, collection, k=16, N=63,
-                 distance_cutoff=0.5, integer_encoding=True):
+                 distance_cutoff=0.5, definite_match_cutoff=0.45,
+                 integer_encoding=True):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -30,7 +29,9 @@ class SignatureCollection(object):
         N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
         distance_cutoff -- maximum normalized distance between image signature and
-            match signatures (default 0.6)
+            match signatures (default 0.5)
+        definite_match_cutoff -- cutoff for definite match. Used in method
+            similarity_search for match verdict(defualt 0.45)
         integer_encoding -- save words as integers instead of arrays (default True)
         """
 
@@ -57,8 +58,14 @@ class SignatureCollection(object):
             raise TypeError('distance_cutoff should be a float')
         if distance_cutoff < 0.:
             raise ValueError('distance_cutoff should be > 0 (got %r)' % distance_cutoff)
+        if type(definite_match_cutoff) is not float:
+            raise TypeError('definite_match_cutoff should be a float')
+        if definite_match_cutoff > distance_cutoff:
+            raise ValueError('definite_match_cutoff should be < %d (got %r)' % (distance_cutoff,
+                                                                                definite_match_cutoff))
 
         self.distance_cutoff = distance_cutoff
+        self.definite_match_cutoff = definite_match_cutoff
 
         # Check bool input
         if type(integer_encoding) is not bool:
@@ -245,6 +252,47 @@ class SignatureCollection(object):
 
             # yield a set of results
             yield l
+
+    def similarity_search(self, path, n_parallel_words=1):
+        """Performs similarity search on image
+
+        Essentially a wrapper for parallel_find.
+
+        Returns a dict with the result:
+        {"verdict": pass|fail|pending,
+        "reason": dict of definite or possible matches}
+
+        path -- path or url to image
+        n_parallel_words -- number of parallel processes to use (default 1)
+        """
+
+        # initialize the iterator
+        s = self.parallel_find(path, n_parallel_words=n_parallel_words)
+
+        # initialize a list to hold borderline cases
+        borderline_cases = list()
+
+        while True:
+            try:
+                result = s.next()
+                # investigate if any results are returned
+                if result:
+                    for entry in result:
+                        # if the result is closer than the definite cutoff, return immediately
+                        if entry[0] < self.definite_match_cutoff:
+                            return {'verdict': 'fail', 'reason': [entry]}
+                        elif entry[0] < self.distance_cutoff:
+                            borderline_cases.append(entry)
+
+            except StopIteration:
+                # iterator is exhausted, no matches found
+                # return pass if borderline_cases is empty, otherwise pending
+                if borderline_cases:
+                    return {'verdict': 'pending', 'reason': borderline_cases}
+                else:
+                    return {'verdict': 'pass', 'reason': []}
+
+
 
 
 def make_record(path, gis, k, N, integer_encoding=True):
