@@ -1,4 +1,4 @@
-from source.signature_database import SignatureCollection
+from image_match.signature_database import SignatureCollection
 from sys import stdout
 from os.path import split
 from os import chdir, pardir, mkdir, remove

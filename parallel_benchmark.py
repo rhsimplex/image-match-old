@@ -1,4 +1,4 @@
-from source.signature_database import SignatureCollection
+from image_match.signature_database import SignatureCollection
 from pymongo import MongoClient
 from random import randint
 from os import listdir
