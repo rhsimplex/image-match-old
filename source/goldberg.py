@@ -169,8 +169,8 @@ class ImageSignature(object):
             lower_column_limit = int(lower_percentile/100.*image.shape[1])
             upper_column_limit = int(upper_percentile/100.*image.shape[1])
 
-        return [(lower_row_limit,upper_row_limit),
-                (lower_column_limit,upper_column_limit)]
+        return [(lower_row_limit, upper_row_limit),
+                (lower_column_limit, upper_column_limit)]
         
     @staticmethod
     def compute_grid_points(image, n=9, window=None):
