@@ -1,5 +1,5 @@
 from skimage.color import rgb2gray
-from scipy.ndimage import imread
+from skimage.io import imread
 import numpy as np
 
 
