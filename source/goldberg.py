@@ -129,10 +129,7 @@ class ImageSignature(object):
         Keyword arguments:
         imagepath -- path to image
         """
-        try:
-            return rgb2gray(imread(imagepath))
-        except IOError:
-            print 'File not found: %s' % imagepath
+        return rgb2gray(imread(imagepath))
 
     @staticmethod
     def crop_image(image, lower_percentile=5, upper_percentile=95):
@@ -150,7 +147,7 @@ class ImageSignature(object):
         # column-wise differences
         cw = np.cumsum(np.sum(np.abs(np.diff(image, axis=0)), axis=0))
 
-        #compute percentiles
+        # compute percentiles
         upper_column_limit = np.searchsorted(cw,
                                              np.percentile(cw, upper_percentile),
                                              side='left')
