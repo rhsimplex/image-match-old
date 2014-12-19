@@ -16,7 +16,7 @@ class SignatureCollection(object):
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
     def __init__(self, collection, k=16, N=63,
-                 distance_cutoff=0.5, definite_match_cutoff=0.45,
+                 distance_cutoff=0.5, definite_match_cutoff=0.40,
                  integer_encoding=True):
         """Initialize SignatureCollection object
 
@@ -279,9 +279,9 @@ class SignatureCollection(object):
                 if result:
                     for entry in result:
                         # if the result is closer than the definite cutoff, return immediately
-                        if entry[0] < self.definite_match_cutoff:
+                        if entry['dist'] < self.definite_match_cutoff:
                             return {'verdict': 'fail', 'reason': [entry]}
-                        elif entry[0] < self.distance_cutoff:
+                        elif entry['dist'] < self.distance_cutoff:
                             borderline_cases.append(entry)
 
             except StopIteration:
@@ -431,7 +431,7 @@ def get_next_match(result_q, curs, signature, cutoff=0.5):
             rec = curs.next()
             dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
             if dist < cutoff:
-                matches[rec['_id']] = (dist, rec['path'], rec['_id'])
+                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], '_id': rec['_id']}
                 result_q.put(matches)
         except StopIteration:
             # do nothing...the cursor is exhausted
