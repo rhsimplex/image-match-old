@@ -12,7 +12,7 @@ For now, how to get a test database running:
 ### How do I get set up? ###
 Fast demo:
 1. Clone repository
-2. Run example.py. The comments explain basic usage.
+2. Run `example.py`. The comments explain basic usage.
 
 Longer demo:
 1. Clone repository
