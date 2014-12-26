@@ -3,36 +3,44 @@ from operator import add
 from mathutils import Matrix
 from numpy import identity
 from numpy.linalg import eig
-from os import curdir
+from os.path import split, join
 import bpy
+import sys
+
 
 # construct a matrix [B] such that [B]y = b x y
 def bracketB(v):
-    return Matrix([[    0,-v[2], v[1]],
-                    [v[2],    0,-v[0]],
-                    [-v[1],v[0],   0]])
+    return Matrix([[    0, -v[2], v[1]],
+                    [v[2],    0, -v[0]],
+                    [-v[1], v[0],   0]])
+
 
 # dot product is defined for blender Matrix class, but not power
 def matrix_square(M):
     return M * M
 
+
 # see http://en.wikipedia.org/wiki/Moment_of_inertia#Principal_axes
 def inertia_matrix(vertices):
     return reduce(add, map(lambda v: -1 * matrix_square(bracketB(v)), vertices))
 
+# get path and output directory
+path = sys.argv[-2]
+output_dir = sys.argv[-1]
+
 # clear scene
 bpy.ops.object.mode_set(mode='OBJECT')
-bpy.ops.object.select_by_type(type = 'MESH')
+bpy.ops.object.select_by_type(type='MESH')
 bpy.ops.object.delete(use_global=False)
 
 # load stl
-bpy.ops.import_mesh.stl(filepath="C:\\Users\\ryan\\Downloads\\brain-gear\\brain-gear.stl")
-bpy.ops.object.select_by_type(type = 'MESH')
+bpy.ops.import_mesh.stl(filepath=path)
+bpy.ops.object.select_by_type(type='MESH')
 
 # move object origin to center of mass, move object to global origin
 obj = bpy.context.active_object
 bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-obj.location = [0,0,0]
+obj.location = [0, 0, 0]
 
 # scale by max
 factor = 3./max([x.co.magnitude for x in obj.data.vertices.values()])
@@ -50,7 +58,7 @@ evecs = evecs.T
 # rotate to principal axes
 obj.data.transform(Matrix(evecs).to_4x4())
 
-# swicth camera to orthorhombic perspective
+# switch camera to orthorhombic perspective
 scene = bpy.data.scenes["Scene"]
 scene.camera.data.type = 'ORTHO'
 
@@ -71,7 +79,7 @@ for i, v in enumerate(identity(3)):
     scene.objects['Lamp'].location = 5 * v
     
     # render front
-    bpy.data.scenes["Scene"].render.filepath = 'c:\\tmp\\front_%i' % i
+    bpy.data.scenes["Scene"].render.filepath = join(output_dir, '%s_front_%i' % (split(path)[-1], i))
     bpy.ops.render.render(write_still=True)
     
     # flip
@@ -79,5 +87,5 @@ for i, v in enumerate(identity(3)):
     scene.objects['Lamp'].location = -5 * v
     
     # render back
-    bpy.data.scenes["Scene"].render.filepath = 'c:\\tmp\\back_%i' % i
+    bpy.data.scenes["Scene"].render.filepath = join(output_dir, '%s_back_%i' % (split(path)[-1], i))
     bpy.ops.render.render(write_still=True)
