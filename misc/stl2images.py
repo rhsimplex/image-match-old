@@ -1,10 +1,25 @@
+"""Blender script for generating reproducible images from stl files.
+
+Needs two arguments from command line: full path of stl, and full path of directory to store results.
+Requires blender 2.7+ (previous versions do not have numpy builtin)
+
+Usage example:
+
+$blender -b -P stl2images.py ~/stl_files/example.stl ~/tmp
+
+Explanation:
+-b flag runs blender in background (no GUI)
+-P flag tells blender to execute a python script (stl2images.py, this file)
+~/stl_files/examples.stl is the target STL file
+~/tmp the target output directory
+"""
 from functools import reduce
 from operator import add
-from mathutils import Matrix
+from mathutils import Matrix        # blender-specific class
 from numpy import identity
 from numpy.linalg import eig
 from os.path import split, join
-import bpy
+import bpy                          # blender-specific module
 import sys
 
 
