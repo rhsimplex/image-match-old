@@ -5,11 +5,12 @@ Requires blender 2.7+ (previous versions do not have numpy builtin)
 
 Usage example:
 
-$blender -b -P stl2images.py ~/stl_files/example.stl ~/tmp
+$blender -b -P stl2images.py -- ~/stl_files/example.stl ~/tmp
 
 Explanation:
 -b flag runs blender in background (no GUI)
 -P flag tells blender to execute a python script (stl2images.py, this file)
+-- tells blender to send these arguments to the script, not to blender
 ~/stl_files/examples.stl is the target STL file
 ~/tmp the target output directory
 """
