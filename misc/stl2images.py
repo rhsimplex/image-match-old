@@ -24,7 +24,7 @@ import bpy                          # blender-specific module
 import sys
 
 
-# construct a matrix [B] such that [B]y = b x y
+# construct a matrix [B] such that [B]v = b x v (cross-product)
 def bracketB(v):
     return Matrix([[    0, -v[2], v[1]],
                     [v[2],    0, -v[0]],
