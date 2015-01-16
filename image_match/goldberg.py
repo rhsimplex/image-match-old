@@ -127,7 +127,7 @@ class ImageSignature(object):
         signature -- signature in the format of this ImageSignature object
         """
         return -signature
-    
+
     @staticmethod
     def preprocess_image(imagepath):
         """Loads an image and converts to greyscale.
