@@ -2,6 +2,9 @@
 
 Needs two arguments from command line: full path of stl, and full path of directory to store results.
 Requires blender 2.7+ (previous versions do not have numpy builtin)
+$sudo add-apt-repository ppa:irie/blender
+$sudo apt-get update
+$sudo apt-get install blender
 
 Usage example:
 
