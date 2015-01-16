@@ -120,6 +120,14 @@ class ImageSignature(object):
         # Step 5: Flatten array and return signature
         return np.ravel(diff_mat).astype('int8')
 
+    def invert_signature(self, signature):
+        """Generates a signature of a color inverted image
+
+        Keyword arguments:
+        signature -- signature in the format of this ImageSignature object
+        """
+        return -signature
+    
     @staticmethod
     def preprocess_image(imagepath):
         """Loads an image and converts to greyscale.
