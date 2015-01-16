@@ -136,16 +136,41 @@ class ImageSignature(object):
         """
         if self.diagonal_neighbors:
             def flip_func(array):
-                # this spec can be found in the compute_differentials function
+                # this order is arbitrary and the spec can be found in the compute_differentials function
                 return array[[2, 1, 0, 4, 3, 7, 6, 5]]
         else:
             def flip_func(array):
                 return array[[0, 2, 1, 3]]
+
         unflattened = signature.reshape((self.n, self.n, 4 + 4 * self.diagonal_neighbors))
+
         return np.ravel(
             np.apply_along_axis(
                 flip_func, 2,
                 np.fliplr(unflattened)
+            )
+        )
+
+    def rotate_signature(self, signature):
+        """Generates a signature of a 90 degree rotated image
+
+        Keyword arguments:
+        signature -- signature in the format of this ImageSignature object
+        """
+        if self.diagonal_neighbors:
+            def rot_func(array):
+                # this order is arbitrary and the spec can be found in the compute_differentials function
+                return array[[2, 4, 7, 1, 6, 0, 3, 5]]
+        else:
+            def rot_func(array):
+                return array[[2, 0, 3, 1]]
+
+        unflattened = signature.reshape((self.n, self.n, 4 + 4 * self.diagonal_neighbors))
+
+        return np.ravel(
+            np.apply_along_axis(
+                rot_func, 2,
+                np.rot90(unflattened)
             )
         )
 
