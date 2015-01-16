@@ -128,6 +128,27 @@ class ImageSignature(object):
         """
         return -signature
 
+    def flip_signature(self, signature):
+        """Generates a signature of a flipped image
+
+        Keyword arguments:
+        signature -- signature in the format of this ImageSignature object
+        """
+        if self.diagonal_neighbors:
+            def flip_func(array):
+                # this spec can be found in the compute_differentials function
+                return array[[2, 1, 0, 4, 3, 7, 6, 5]]
+        else:
+            def flip_func(array):
+                return array[[0, 2, 1, 3]]
+        unflattened = signature.reshape((self.n, self.n, 4 + 4 * self.diagonal_neighbors))
+        return np.ravel(
+            np.apply_along_axis(
+                flip_func, 2,
+                np.fliplr(unflattened)
+            )
+        )
+
     @staticmethod
     def preprocess_image(imagepath):
         """Loads an image and converts to greyscale.
@@ -242,14 +263,14 @@ class ImageSignature(object):
         The n x nth coordinate corresponds to a grid point.  The eight values are
         the differences between neighboring grid points, in this order:
 
-        right
+        upper left
+        upper
+        upper right
         left
-        up
-        down
-        upper left diagonal
-        lower right diagonal
-        upper right diagonal
-        lower left diagonal
+        right
+        lower left
+        lower
+        lower right
 
         Keyword arguments:
         grey_level_matrix -- grid of values sampled from image
