@@ -184,7 +184,8 @@ class SignatureCollection(object):
 
         keys = list(stds.keys())
         vals = list(stds.values())
-        # Fill a queue with cursors in order of highest std
+
+        # Fill a queue with {word: word_val} pairs in order of std
         initial_q = managerQueue.Queue()
         while len(stds) > 0:
             max_val = max(vals)
@@ -200,9 +201,16 @@ class SignatureCollection(object):
                 print record[max_word]
 
             initial_q.put(
-                self.collection.find(
-                    {max_word: words_to_int(np.array([record[max_word]]))[0]},
-                    fields=['_id', 'signature', 'path']))
+                # self.collection.find(
+                #     {max_word: words_to_int(np.array([record[max_word]]))[0]},
+                #     fields=['_id', 'signature', 'path']))
+                {max_word: words_to_int(np.array([record[max_word]]))[0]}
+            )
+
+        # enqueue a sentinel value so we know we have reached the end of the queue
+        initial_q.put('STOP')
+        queue_empty = False
+
         if verbose:
             print 'Queue length: %i' % initial_q.qsize()
 
@@ -215,16 +223,24 @@ class SignatureCollection(object):
         # begin iterator
         while True:
             # if all there are no more cursors, kill iterator
-            if initial_q.empty():
+            if initial_q.empty() or queue_empty:
+                # Queue.empty is not reliable. The iteration will be stopped by the sentinel value
+                # (the last item in the queue)
                 raise StopIteration
 
             # build children processes, taking cursors from in_process queue first, then initial queue
             p = list()
             while len(p) < n_parallel_words:
+                word_pair = initial_q.get()
+                if word_pair == 'STOP':
+                    # if we reach the sentinel value, set the flag and stop queuing processes
+                    queue_empty = True
+                    break
                 if not initial_q.empty():
                     p.append(Process(target=get_next_match,
                                      args=(results_q,
-                                           initial_q.get(),
+                                           word_pair,
+                                           self.collection,
                                            record['signature'],
                                            self.distance_cutoff)))
 
@@ -410,7 +426,7 @@ def normalized_distance(target_array, vec):
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
 
-def get_next_match(result_q, curs, signature, cutoff=0.5):
+def get_next_match(result_q, word, collection, signature, cutoff=0.5):
     """Scans a cursor for word matches below a distance threshold.
 
     Exhausts a cursor, possibly enqueuing many matches
@@ -420,11 +436,13 @@ def get_next_match(result_q, curs, signature, cutoff=0.5):
     multiprocessing.
 
     Keyword arguments:
-    q -- a multiprocessing queue
-    curs -- a Pymongo cursor object
+    result_q -- a multiprocessing queue in which to queue results
+    word -- {word_name: word_value} dict to scan against
+    collection -- a pymongo collection
     signature -- signature array to match against
     cutoff -- normalized distance limit (default 0.5)
     """
+    curs = collection.find(word, fields=['_id', 'signature', 'path'])
     matches = dict()
     while True:
         try:
