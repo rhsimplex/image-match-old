@@ -171,7 +171,7 @@ class SignatureCollection(object):
         if len(self.collection.index_information()) <= 1:
             self.index_collection()
 
-    def parallel_find(self, path_or_signature, n_parallel_words=1, verbose=False):
+    def parallel_find(self, path_or_signature, n_parallel_words=None, verbose=False):
         """Makes an iterator to gets tne next match(es).
 
         Multiprocess find
@@ -180,6 +180,8 @@ class SignatureCollection(object):
         path_or_signature -- path to image or signature array
         n_parallel_words -- number of words to scan in parallel (default 1)
         """
+        if n_parallel_words is None:
+            n_parallel_words = 2 * cpu_count()
 
         # check if an array (signature) was passed. If so, generate the words here:
         if type(path_or_signature) is np.ndarray:
