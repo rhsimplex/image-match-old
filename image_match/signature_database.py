@@ -80,7 +80,7 @@ class SignatureCollection(object):
             self.index_names = [field for field in self.collection.find_one({}).keys()
                                 if field.find('simple') > -1]
 
-    def add_images(self, image_dir, drop_collection=False, limit=None, verbose=False,
+    def add_images(self, image_dir_or_list, drop_collection=False, limit=None, verbose=False,
                    insert_block_size=1000, n_processes=None):
         """Bulk adds images to database.
 
@@ -107,11 +107,18 @@ class SignatureCollection(object):
             n_processes = cpu_count()
 
         if verbose:
-            print 'Using %i processes.' % n_processes
+            print 'Using %i processes.' % 2 * n_processes
 
         pool = Pool(n_processes)
 
-        image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
+        if type(image_dir_or_list) is str:
+            image_dir = image_dir_or_list
+            image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
+        elif type(image_dir_or_list) is list:
+            image_paths = image_dir_or_list
+        else:
+            raise ValueError('A directory name or list of files is required')
+
         if limit is None:
             limit = len(image_paths)
         if verbose:
