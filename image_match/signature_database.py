@@ -1,5 +1,6 @@
 from goldberg import ImageSignature
 import numpy as np
+from itertools import product
 from os import listdir
 from os.path import join
 from multiprocessing import Pool, cpu_count, Process, Queue
@@ -163,19 +164,29 @@ class SignatureCollection(object):
         if len(self.collection.index_information()) <= 1:
             self.index_collection()
 
-    def parallel_find(self, path, n_parallel_words=1, verbose=False):
+    def parallel_find(self, path_or_signature, n_parallel_words=1, verbose=False):
         """Makes an iterator to gets tne next match(es).
 
-        Use only one parallel word for now. Multiple processes work,
-        but thread join will hang on the last word
+        Multiprocess find
 
         Keyword arguments:
-        path -- path to image
+        path_or_signature -- path to image or signature array
         n_parallel_words -- number of words to scan in parallel (default 1)
         """
 
-        # Don't encode words yet because we need to compute stds
-        record = make_record(path, self.gis, self.k, self.N, integer_encoding=False)
+        # check if an array (signature) was passed. If so, generate the words here:
+        if type(path_or_signature) is np.ndarray:
+            record = dict()
+            words = get_words(path_or_signature, self.k, self.N)
+            max_contrast(words)
+            for i in range(self.N):
+                record[''.join(['simple_word_', str(i)])] = words[i].tolist()
+            record['signature'] = path_or_signature
+
+        # otherwise, generate the record in the usual way
+        else:
+            # Don't encode words yet because we need to compute stds
+            record = make_record(path_or_signature, self.gis, self.k, self.N, integer_encoding=False)
 
         # Generate standard deviations of each word vector.
         stds = dict()
@@ -201,9 +212,6 @@ class SignatureCollection(object):
                 print record[max_word]
 
             initial_q.put(
-                # self.collection.find(
-                #     {max_word: words_to_int(np.array([record[max_word]]))[0]},
-                #     fields=['_id', 'signature', 'path']))
                 {max_word: words_to_int(np.array([record[max_word]]))[0]}
             )
 
@@ -269,7 +277,7 @@ class SignatureCollection(object):
             # yield a set of results
             yield l
 
-    def similarity_search(self, path, n_parallel_words=1):
+    def similarity_search(self, path, n_parallel_words=1, all_orientations=False):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -280,35 +288,67 @@ class SignatureCollection(object):
 
         path -- path or url to image
         n_parallel_words -- number of parallel processes to use (default 1)
+        all_orientations -- check image against all 90 degree rotations, mirror images, color inversions, and
+            combinations thereof (default False)
         """
 
-        # initialize the iterator
-        s = self.parallel_find(path, n_parallel_words=n_parallel_words)
+        # get the initial signature
+        signature = self.gis.generate_signature(path)
+
+        if all_orientations:
+            # initialize an iterator of composed transformations
+            inversions = [self.gis.identical_signature, self.gis.invert_signature]
+
+            mirrors = [self.gis.identical_signature, self.gis.flip_signature]
+
+            # an ugly solution for function composition
+            rotations = [self.gis.identical_signature,
+                         self.gis.rotate_signature,
+                         lambda x: self.gis.rotate_signature(self.gis.rotate_signature(x)),
+                         lambda x: self.gis.rotate_signature(self.gis.rotate_signature(self.gis.rotate_signature(x)))]
+
+            # cartesian product of all possible orientations
+            orientations = product(inversions, rotations, mirrors)
+
+        else:
+            # otherwise just use the identity transformation
+            orientations = [[self.gis.identical_signature]]
 
         # initialize a list to hold borderline cases
         borderline_cases = list()
 
-        while True:
-            try:
-                result = s.next()
-                # investigate if any results are returned
-                if result:
-                    for entry in result:
-                        # if the result is closer than the definite cutoff, return immediately
-                        if entry['dist'] < self.definite_match_cutoff:
-                            return {'verdict': 'fail', 'reason': [entry]}
-                        elif entry['dist'] < self.distance_cutoff:
-                            borderline_cases.append(entry)
+        # try for every possible combination of transformations; if all_orientations=False,
+        # this will only take one iteration
+        for transforms in orientations:
+            # compose all functions and apply on signature, in a woefully inelegant way
+            transformed_signature = signature
+            for transform in transforms:
+                transformed_signature = transform(transformed_signature)
 
-            except StopIteration:
-                # iterator is exhausted, no matches found
-                # return pass if borderline_cases is empty, otherwise pending
-                if borderline_cases:
-                    return {'verdict': 'pending', 'reason': borderline_cases}
-                else:
-                    return {'verdict': 'pass', 'reason': []}
+            # initialize the iterator
+            s = self.parallel_find(transformed_signature, n_parallel_words=n_parallel_words)
 
+            while True:
+                try:
+                    result = s.next()
+                    # investigate if any results are returned
+                    if result:
+                        for entry in result:
+                            # if the result is closer than the definite cutoff, return immediately
+                            if entry['dist'] < self.definite_match_cutoff:
+                                return {'verdict': 'fail', 'reason': [entry]}
+                            elif entry['dist'] < self.distance_cutoff:
+                                borderline_cases.append(entry)
 
+                except StopIteration:
+                    # iterator is exhausted, no matches found. Break out and try next orientation, if possible
+                    break
+
+        # return pass if borderline_cases is empty, otherwise pending
+        if borderline_cases:
+            return {'verdict': 'pending', 'reason': borderline_cases}
+        else:
+            return {'verdict': 'pass', 'reason': []}
 
 
 def make_record(path, gis, k, N, integer_encoding=True):

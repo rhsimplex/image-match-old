@@ -120,6 +120,16 @@ class ImageSignature(object):
         # Step 5: Flatten array and return signature
         return np.ravel(diff_mat).astype('int8')
 
+    def identical_signature(self, signature):
+        """Returns an identical signature
+
+        Necessary to make transformations complete under group algebra
+
+        Keyword arguments:
+        signature -- signature in the format of this ImageSignature object
+        """
+        return signature
+
     def invert_signature(self, signature):
         """Generates a signature of a color inverted image
 
