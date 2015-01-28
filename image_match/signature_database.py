@@ -347,7 +347,7 @@ class SignatureCollection(object):
         # this will only take one iteration
         for transforms in orientations:
             # compose all functions and apply on signature, in a woefully inelegant way
-            transformed_image = img
+            transformed_img = img
             for transform in transforms:
                 transformed_img = transform(transformed_img)
 
