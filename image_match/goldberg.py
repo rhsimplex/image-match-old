@@ -80,19 +80,19 @@ class ImageSignature(object):
         assert n_levels > 0, 'n_levels should be > 0 (%r given)' % n_levels
         self.n_levels = n_levels
 
-    def generate_signature(self, path):
+    def generate_signature(self, path_or_image):
         """Generates an image signature.
 
         See section 3 of Goldberg, et al.
 
         Keyword arguments:
-        path -- image path
+        path_or_image -- image path, or image array
 
         Returns a signature array
         """
 
         # Step 1:    Load image as array of grey-levels
-        im_array = self.preprocess_image(path)
+        im_array = self.preprocess_image(path_or_image)
         
         # Step 2a:   Determine cropping boundaries
         if self.crop_percentiles is not None:
@@ -189,15 +189,20 @@ class ImageSignature(object):
         )
 
     @staticmethod
-    def preprocess_image(imagepath):
+    def preprocess_image(image_or_path):
         """Loads an image and converts to greyscale.
 
         Corresponds to 'step 1' in Goldberg's paper
 
         Keyword arguments:
-        imagepath -- path to image
+        image_or_path -- path to image, or image array
         """
-        return rgb2gray(imread(imagepath))
+        if type(image_or_path) is str:
+            return rgb2gray(imread(image_or_path))
+        elif type(image_or_path) is np.ndarray:
+            return rgb2gray(image_or_path)
+        else:
+            raise TypeError('Path or image required.')
 
     @staticmethod
     def crop_image(image, lower_percentile=5, upper_percentile=95, fix_ratio=False):
