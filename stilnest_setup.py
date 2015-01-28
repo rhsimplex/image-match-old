@@ -7,7 +7,7 @@ from os.path import join
 """
 Script to setup a database from Stilnest directory structure
 """
-def build_db(argv):
+def build_db(argv, n=9, cutoff=0.15, k=16, fix_ratio=True, crop_percentiles=(5, 95)):
     """
     Builds a signature collection from the stilnest directory structure
 
@@ -41,7 +41,11 @@ def build_db(argv):
     db = client[db_name]
     c = db[collection_name]
 
-    sd = SignatureCollection(c)
+    # drop collection
+    c.drop()
+
+    sd = SignatureCollection(c, distance_cutoff=cutoff, definite_match_cutoff=cutoff,
+                             fix_ratio=fix_ratio, n_grid=n, k=k, crop_percentile=crop_percentiles)
 
     sd.add_images(paths)
 

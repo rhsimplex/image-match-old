@@ -11,7 +11,7 @@ class ImageSignature(object):
     """
 
     def __init__(self, n=9, crop_percentiles=(5, 95), P=None, diagonal_neighbors=True,
-                 identical_tolerance=2/255., n_levels=2):
+                 identical_tolerance=2/255., n_levels=2, fix_ratio=False):
         """Initialize the signature generator.
 
         The default parameters match those given in Goldberg's paper.
@@ -66,6 +66,9 @@ class ImageSignature(object):
         
         assert type(diagonal_neighbors) is bool, 'diagonal_neighbors should be boolean'
         self.diagonal_neighbors = diagonal_neighbors
+
+        assert type(fix_ratio) is bool, 'fix_ratio should be boolean'
+        self.fix_ratio = fix_ratio
         
         assert type(identical_tolerance) is float or type(identical_tolerance) is int,\
             'identical_tolerance should be a number between 1 and 0'
@@ -95,7 +98,8 @@ class ImageSignature(object):
         if self.crop_percentiles is not None:
             image_limits = self.crop_image(im_array,
                                            lower_percentile=self.lower_percentile,
-                                           upper_percentile=self.upper_percentile)
+                                           upper_percentile=self.upper_percentile,
+                                           fix_ratio=self.fix_ratio)
         else:
             image_limits = None
         
@@ -196,7 +200,7 @@ class ImageSignature(object):
         return rgb2gray(imread(imagepath))
 
     @staticmethod
-    def crop_image(image, lower_percentile=5, upper_percentile=95):
+    def crop_image(image, lower_percentile=5, upper_percentile=95, fix_ratio=False):
         """Crops an image, removing featureless regions.
 
         Corresponds to the first part of 'step 2' in Goldberg's paper
@@ -205,6 +209,9 @@ class ImageSignature(object):
         image -- n x m array
         lower_percentile -- crop image by percentage of difference (default 5)
         upper_percentile -- as lower_percentile (default 95)
+        fix_ratio -- use the larger ratio for both directions (default False). This is useful for
+            using the fast signature transforms on sparse but very similar images (e.g. renderings from
+            fixed directions). Use with care: only use if you can guarantee the incoming image is square
         """
         # row-wise differences
         rw = np.cumsum(np.sum(np.abs(np.diff(image, axis=1)), axis=1))
@@ -233,6 +240,16 @@ class ImageSignature(object):
             lower_column_limit = int(lower_percentile/100.*image.shape[1])
             upper_column_limit = int(upper_percentile/100.*image.shape[1])
 
+        # if fix_ratio, return both limits as the larger range
+        if fix_ratio:
+            if (upper_row_limit - lower_row_limit) > (upper_column_limit - lower_column_limit):
+                return [(lower_row_limit, upper_row_limit),
+                        (lower_row_limit, upper_row_limit)]
+            else:
+                return [(lower_column_limit, upper_column_limit),
+                        (lower_column_limit, upper_column_limit)]
+
+        # otherwise, proceed as normal
         return [(lower_row_limit, upper_row_limit),
                 (lower_column_limit, upper_column_limit)]
         

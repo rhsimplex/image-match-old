@@ -40,7 +40,7 @@ with open(OUTPUT_FILE, 'w') as f:
     for n in processes:
         n_iterations = sc.N/n
         for trial in range(n_trials):
-            s = sc.parallel_find(join(DIR,test_images.pop()), n_parallel_words=n)
+            s = sc.parallel_find(join(DIR,test_images.pop()), n_parallel_words=1)
             starttime = time.time()
             firstresult_time = None
             firstresult_iteration = None

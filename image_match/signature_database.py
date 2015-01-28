@@ -16,9 +16,10 @@ class SignatureCollection(object):
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63,
+    def __init__(self, collection, k=16, N=63, n_grid=9,
                  distance_cutoff=0.5, definite_match_cutoff=0.40,
-                 integer_encoding=True):
+                 integer_encoding=True, fix_ratio=False,
+                 crop_percentile=(5, 95)):
         """Initialize SignatureCollection object
 
         Keyword arguments:
@@ -29,11 +30,14 @@ class SignatureCollection(object):
         k -- word length
         N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
+        n_grid -- size of n x n grid to compute signatures on (default 9)
         distance_cutoff -- maximum normalized distance between image signature and
             match signatures (default 0.5)
         definite_match_cutoff -- cutoff for definite match. Used in method
             similarity_search for match verdict(defualt 0.45)
         integer_encoding -- save words as integers instead of arrays (default True)
+        fix_ratio -- enforce square grids. Not recommended except for square images
+            ...use with care!
         """
 
         # Check that collection is a MongoDB collection
@@ -42,17 +46,17 @@ class SignatureCollection(object):
 
         self.collection = collection
 
-        # Use default ImageSignature parameters for now
-        self.gis = ImageSignature()
-
         # Check integer inputs
         if type(k) is not int:
             raise TypeError('k should be an integer')
         if type(N) is not int:
             raise TypeError('N should be an integer')
+        if type(n_grid) is not int:
+            raise TypeError('n_grid should be an integer')
 
         self.k = k
         self.N = N
+        self.n_grid = n_grid
 
         # Check float input
         if type(distance_cutoff) is not float:
@@ -62,7 +66,7 @@ class SignatureCollection(object):
         if type(definite_match_cutoff) is not float:
             raise TypeError('definite_match_cutoff should be a float')
         if definite_match_cutoff > distance_cutoff:
-            raise ValueError('definite_match_cutoff should be < %d (got %r)' % (distance_cutoff,
+            raise ValueError('definite_match_cutoff should be < %f (got %r)' % (distance_cutoff,
                                                                                 definite_match_cutoff))
 
         self.distance_cutoff = distance_cutoff
@@ -72,6 +76,15 @@ class SignatureCollection(object):
         if type(integer_encoding) is not bool:
             raise TypeError('integer_encoding should be boolean (got %r)')\
                   % type(integer_encoding)
+
+        if type(fix_ratio) is not bool:
+            raise TypeError('fix_ratio should be boolean')
+
+        # need to add input checking
+        self.crop_percentile = crop_percentile
+
+        # Use default ImageSignature parameters for now, only allowing fix_ratio to vary
+        self.gis = ImageSignature(n=n_grid, fix_ratio=fix_ratio, crop_percentiles=crop_percentile)
 
         self.integer_encoding = integer_encoding
 
@@ -178,10 +191,10 @@ class SignatureCollection(object):
 
         Keyword arguments:
         path_or_signature -- path to image or signature array
-        n_parallel_words -- number of words to scan in parallel (default 1)
+        n_parallel_words -- number of words to scan in parallel (default: number of physical processors times 2)
         """
         if n_parallel_words is None:
-            n_parallel_words = 2 * cpu_count()
+            n_parallel_words = cpu_count()
 
         # check if an array (signature) was passed. If so, generate the words here:
         if type(path_or_signature) is np.ndarray:
@@ -240,7 +253,7 @@ class SignatureCollection(object):
         # begin iterator
         while True:
             # if all there are no more cursors, kill iterator
-            if initial_q.empty() or queue_empty:
+            if queue_empty:
                 # Queue.empty is not reliable. The iteration will be stopped by the sentinel value
                 # (the last item in the queue)
                 raise StopIteration
@@ -270,6 +283,10 @@ class SignatureCollection(object):
             else:
                 raise StopIteration
 
+            # join children
+            for process in p:
+                process.join()
+
             # collect results, taking care not to return the same result twice
             l = list()
             while not results_q.empty():
@@ -278,10 +295,6 @@ class SignatureCollection(object):
                     if key not in unique_results:
                         unique_results.add(key)
                         l.append(results[key])
-
-            # join children
-            for process in p:
-                process.join()
 
             # yield a set of results
             yield l
