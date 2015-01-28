@@ -184,7 +184,7 @@ class SignatureCollection(object):
         if len(self.collection.index_information()) <= 1:
             self.index_collection()
 
-    def parallel_find(self, path_or_signature, n_parallel_words=None, verbose=False):
+    def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False):
         """Makes an iterator to gets tne next match(es).
 
         Multiprocess find
@@ -192,9 +192,13 @@ class SignatureCollection(object):
         Keyword arguments:
         path_or_signature -- path to image or signature array
         n_parallel_words -- number of words to scan in parallel (default: number of physical processors times 2)
+        word_limit -- limit the number of words to search (default None)
         """
         if n_parallel_words is None:
             n_parallel_words = cpu_count()
+
+        if word_limit is None:
+            word_limit = self.N
 
         # check if an array (signature) was passed. If so, generate the words here:
         if type(path_or_signature) is np.ndarray:
@@ -218,9 +222,9 @@ class SignatureCollection(object):
         keys = list(stds.keys())
         vals = list(stds.values())
 
-        # Fill a queue with {word: word_val} pairs in order of std
+        # Fill a queue with {word: word_val} pairs in order of std up to the word limit
         initial_q = managerQueue.Queue()
-        while len(stds) > 0:
+        while len(stds) > (self.N - word_limit):
             max_val = max(vals)
             max_pos = vals.index(max_val)
             max_word = keys[max_pos]
