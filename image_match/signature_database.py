@@ -303,7 +303,7 @@ class SignatureCollection(object):
             # yield a set of results
             yield l
 
-    def similarity_search(self, path, n_parallel_words=1, all_orientations=False):
+    def similarity_search(self, path, n_parallel_words=1, word_limit=None, all_orientations=False):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -314,31 +314,31 @@ class SignatureCollection(object):
 
         path -- path or url to image
         n_parallel_words -- number of parallel processes to use (default 1)
+        word_limit -- limit number of words to search against (default None)
         all_orientations -- check image against all 90 degree rotations, mirror images, color inversions, and
             combinations thereof (default False)
         """
-
-        # get the initial signature
-        signature = self.gis.generate_signature(path)
+        # get initial image
+        img = self.gis.preprocess_image(path)
 
         if all_orientations:
             # initialize an iterator of composed transformations
-            inversions = [self.gis.identical_signature, self.gis.invert_signature]
+            inversions = [lambda x: x, lambda x: -x]
 
-            mirrors = [self.gis.identical_signature, self.gis.flip_signature]
+            mirrors = [lambda x: x, np.fliplr]
 
             # an ugly solution for function composition
-            rotations = [self.gis.identical_signature,
-                         self.gis.rotate_signature,
-                         lambda x: self.gis.rotate_signature(self.gis.rotate_signature(x)),
-                         lambda x: self.gis.rotate_signature(self.gis.rotate_signature(self.gis.rotate_signature(x)))]
+            rotations = [lambda x: x,
+                         np.rot90,
+                         lambda x: np.rot90(x, 2),
+                         lambda x: np.rot90(x, 3)]
 
             # cartesian product of all possible orientations
             orientations = product(inversions, rotations, mirrors)
 
         else:
             # otherwise just use the identity transformation
-            orientations = [[self.gis.identical_signature]]
+            orientations = [[lambda x: x]]
 
         # initialize a list to hold borderline cases
         borderline_cases = list()
@@ -347,12 +347,15 @@ class SignatureCollection(object):
         # this will only take one iteration
         for transforms in orientations:
             # compose all functions and apply on signature, in a woefully inelegant way
-            transformed_signature = signature
+            transformed_image = img
             for transform in transforms:
-                transformed_signature = transform(transformed_signature)
+                transformed_img = transform(transformed_img)
+
+            # generate the signature
+            transformed_signature = self.gis.generate_signature(transformed_img)
 
             # initialize the iterator
-            s = self.parallel_find(transformed_signature, n_parallel_words=n_parallel_words)
+            s = self.parallel_find(transformed_signature, n_parallel_words=n_parallel_words, word_limit=word_limit)
 
             while True:
                 try:
