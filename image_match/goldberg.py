@@ -77,7 +77,8 @@ class ImageSignature(object):
         self.identical_tolerance = identical_tolerance
 
         assert type(n_levels) is int, 'n_levels should be an integer'
-        assert n_levels > 0, 'n_levels should be > 0 (%r given)' % n_levels
+        assert n_levels > 0
+        'n_levels should be > 0 (%r given)' % n_levels
         self.n_levels = n_levels
 
     def generate_signature(self, path_or_image):
