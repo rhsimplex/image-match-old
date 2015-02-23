@@ -120,7 +120,7 @@ class SignatureCollection(object):
             n_processes = cpu_count()
 
         if verbose:
-            print 'Using %i processes.' % 2 * n_processes
+            print 'Using %i processes.' % (2 * n_processes)
 
         pool = Pool(n_processes)
 
