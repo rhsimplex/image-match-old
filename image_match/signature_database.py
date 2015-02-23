@@ -122,7 +122,7 @@ class SignatureCollection(object):
         if verbose:
             print 'Using %i processes.' % (2 * n_processes)
 
-        pool = Pool(n_processes)
+        pool = Pool(2 * n_processes)
 
         if type(image_dir_or_list) is str:
             image_dir = image_dir_or_list
