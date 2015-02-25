@@ -198,7 +198,9 @@ class ImageSignature(object):
         Keyword arguments:
         image_or_path -- path to image, or image array
         """
-        if type(image_or_path) is str:
+        if type(image_or_path) is unicode:
+            return rgb2gray(imread(image_or_path))
+        elif type(image_or_path) is str:
             return rgb2gray(imread(image_or_path))
         elif type(image_or_path) is np.ndarray:
             return rgb2gray(image_or_path)

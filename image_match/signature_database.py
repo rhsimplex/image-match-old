@@ -94,7 +94,7 @@ class SignatureCollection(object):
                                 if field.find('simple') > -1]
 
     def add_images(self, image_dir_or_list, drop_collection=False, limit=None, verbose=False,
-                   insert_block_size=1000, n_processes=None):
+                   insert_block_size=100000, n_processes=None):
         """Bulk adds images to database.
 
         Probably not very efficient, but fine for prototyping.
@@ -380,7 +380,7 @@ class SignatureCollection(object):
             return {'verdict': 'pass', 'reason': []}
 
 
-def make_record(path, gis, k, N, integer_encoding=True):
+def make_record(path, gis, k, N, img=None, integer_encoding=True):
     """Makes a record suitable for database insertion.
 
     This non-class version of make_record is provided for 
@@ -392,7 +392,11 @@ def make_record(path, gis, k, N, integer_encoding=True):
     """
     record = dict()
     record['path'] = path
-    signature = gis.generate_signature(path)
+    if img is not None:
+        signature = gis.generate_signature(img)
+    else:
+        signature = gis.generate_signature(path)
+
     record['signature'] = signature.tolist()
 
     words = get_words(signature, k, N)
