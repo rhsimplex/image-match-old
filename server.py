@@ -3,10 +3,12 @@ import tornado.web
 from pymongo import MongoClient
 from stilnest_setup import StilnestCollection
 import json
+from bson.json_util import dumps
+
 
 client = MongoClient()
-db = client['example_db']
-c = db['example_collection']
+db = client['stilnest']
+c = db['signatures']
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -16,7 +18,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self, url):
         sc = StilnestCollection(c)
         d = sc.stilnest_lookup(url)
-        self.write(json.dumps(d))
+        self.write(dumps(d))
 
 
 application = tornado.web.Application([
