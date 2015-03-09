@@ -1,6 +1,6 @@
 import tornado.ioloop
 import tornado.web
-import tornado.options
+from tornado.options import options
 from tornado.log import enable_pretty_logging
 
 from pymongo import MongoClient
@@ -9,7 +9,8 @@ from bson.json_util import dumps
 from stilnest_setup import StilnestCollection
 
 
-tornado.options.parse_command_line()
+options.define('port', default=8888, help='Port to listen on', type=int)
+options.parse_command_line()
 enable_pretty_logging()
 
 
@@ -32,6 +33,6 @@ application = tornado.web.Application([
     (r'/image_match/(.*)', MainHandler),
 ])
 
-if __name__ == "__main__":
-    application.listen(8888)
+if __name__ == '__main__':
+    application.listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
