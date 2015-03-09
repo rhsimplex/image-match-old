@@ -1,9 +1,16 @@
 import tornado.ioloop
 import tornado.web
+import tornado.options
+from tornado.log import enable_pretty_logging
+
 from pymongo import MongoClient
-from stilnest_setup import StilnestCollection
-import json
 from bson.json_util import dumps
+
+from stilnest_setup import StilnestCollection
+
+
+tornado.options.parse_command_line()
+enable_pretty_logging()
 
 
 client = MongoClient()
