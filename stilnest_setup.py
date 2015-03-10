@@ -1,9 +1,10 @@
 from image_match.signature_database import SignatureCollection
 import sys
 import requests
+from hashlib import sha1
 from pymongo import MongoClient
 from os import walk, spawnvp, P_WAIT, remove, listdir
-from os.path import join, split, abspath
+from os.path import join, split, abspath, splitext
 from time import time
 from numpy import mean
 
@@ -33,8 +34,13 @@ class StilnestCollection(SignatureCollection):
         #  make the cutoff something reasonable for this application
         self.distance_cutoff = cutoff
 
-        # downlad and open file
+        # download and open file
         filename = split(stl_file_URL)[-1]
+        # add a hashed timestamp to avoid collisions
+        ts = sha1(str(time())).hexdigest()
+        s = list(splitext(filename))
+        s.insert(1, ts)
+        filename = ''.join(s)
         with open(filename, 'w+') as f:
             download_start_time = time()
             stl_data = requests.get(stl_file_URL).content

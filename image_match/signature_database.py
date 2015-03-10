@@ -8,7 +8,6 @@ from multiprocessing.managers import Queue as managerQueue
 from pymongo.collection import Collection
 from functools import partial
 
-
 class SignatureCollection(object):
     """Wrapper class for MongoDB collection.
 
@@ -380,7 +379,7 @@ class SignatureCollection(object):
             return {'verdict': 'pass', 'reason': []}
 
 
-def make_record(path, gis, k, N, img=None, integer_encoding=True):
+def make_record(path, gis, k, N, img=None, integer_encoding=True, path_as_id=False):
     """Makes a record suitable for database insertion.
 
     This non-class version of make_record is provided for 
@@ -391,7 +390,10 @@ def make_record(path, gis, k, N, img=None, integer_encoding=True):
     path -- path to image
     """
     record = dict()
-    record['path'] = path
+    if path_as_id:
+        record['_id'] = path
+    else:
+        record['path'] = path
     if img is not None:
         signature = gis.generate_signature(img)
     else:
