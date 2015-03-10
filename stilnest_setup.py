@@ -30,7 +30,7 @@ class StilnestCollection(SignatureCollection):
     stlc.stilnest_lookup(example_stl_path)  # returns some stuff!
 
     """
-    def stilnest_lookup(self, stl_file_URL, cutoff=0.1):
+    def stilnest_lookup(self, stl_file_URL, cutoff=0.5):
         #  make the cutoff something reasonable for this application
         self.distance_cutoff = cutoff
 
@@ -90,6 +90,8 @@ class StilnestCollection(SignatureCollection):
                 result['match_summary'][match].append(result['distances'][i])
 
         for key in result['match_summary'].keys():
+            while len(result['match_summary'][key]) < 6:
+                result['match_summary'][key].append(1.0)
             result['match_summary'][key] = mean(result['match_summary'][key])
 
         # add timing info
