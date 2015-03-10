@@ -30,7 +30,7 @@ class StilnestCollection(SignatureCollection):
     stlc.stilnest_lookup(example_stl_path)  # returns some stuff!
 
     """
-    def stilnest_lookup(self, stl_file_URL, cutoff=0.5):
+    def stilnest_lookup(self, stl_file_URL, cutoff=0.1):
         #  make the cutoff something reasonable for this application
         self.distance_cutoff = cutoff
 
