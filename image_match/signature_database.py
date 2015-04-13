@@ -287,8 +287,8 @@ class SignatureCollection(object):
                 raise StopIteration
 
             # join children
-            for process in p:
-                process.join()
+            # for process in p:
+            #    process.join()
 
             # collect results, taking care not to return the same result twice
             l = list()
