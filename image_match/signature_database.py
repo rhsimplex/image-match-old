@@ -541,7 +541,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
             rec = curs.next()
             dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
             if dist < cutoff:
-                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], '_id': rec['_id']}
+                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
                 result_q.put(matches)
         except StopIteration:
             result_q.close()
