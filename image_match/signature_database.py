@@ -302,7 +302,7 @@ class SignatureCollection(object):
             # yield a set of results
             yield l
 
-    def similarity_search(self, path, n_parallel_words=1, word_limit=None, all_orientations=False):
+    def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -314,11 +314,20 @@ class SignatureCollection(object):
         path -- path or url to image
         n_parallel_words -- number of parallel processes to use (default 1)
         word_limit -- limit number of words to search against (default None)
+        result_limit
         all_orientations -- check image against all 90 degree rotations, mirror images, color inversions, and
             combinations thereof (default False)
         """
         # get initial image
         img = self.gis.preprocess_image(path)
+
+        if n_parallel_words is None:
+            n_parallel_words = cpu_count()
+
+        if all_results:
+            return reduce(lambda a, b: a + b, list(self.parallel_find(path,
+                                                                      n_parallel_words=n_parallel_words,
+                                                                      word_limit=word_limit)))
 
         if all_orientations:
             # initialize an iterator of composed transformations
