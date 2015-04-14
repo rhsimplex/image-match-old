@@ -286,10 +286,6 @@ class SignatureCollection(object):
             else:
                 raise StopIteration
 
-            # join children
-            # for process in p:
-            #    process.join()
-
             # collect results, taking care not to return the same result twice
             l = list()
             while not results_q.empty():
@@ -298,6 +294,10 @@ class SignatureCollection(object):
                     if key not in unique_results:
                         unique_results.add(key)
                         l.append(results[key])
+
+            # join children
+            # for process in p:
+            #     process.join()
 
             # yield a set of results
             yield l
@@ -501,7 +501,7 @@ def normalized_distance(target_array, vec):
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
 
-def get_next_match(result_q, word, collection, signature, cutoff=0.5):
+def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cursor=1000):
     """Scans a cursor for word matches below a distance threshold.
 
     Exhausts a cursor, possibly enqueuing many matches
@@ -516,8 +516,16 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5):
     collection -- a pymongo collection
     signature -- signature array to match against
     cutoff -- normalized distance limit (default 0.5)
+    max_in_cursor -- if more than max_in_cursor matches are in the cursor,
+        ignore this cursor; this column is not discriminatory
     """
     curs = collection.find(word, fields=['_id', 'signature', 'path'])
+
+    # if the cursor has many matches, then it's probably not a huge help. Get the next one.
+    if curs.count() > max_in_cursor:
+        result_q.close()
+        return
+
     matches = dict()
     while True:
         try:
@@ -527,5 +535,6 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5):
                 matches[rec['_id']] = {'dist': dist, 'path': rec['path'], '_id': rec['_id']}
                 result_q.put(matches)
         except StopIteration:
+            result_q.close()
             # do nothing...the cursor is exhausted
             break
