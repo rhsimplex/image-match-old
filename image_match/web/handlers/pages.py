@@ -1,11 +1,11 @@
-import tornado.web
 import tornado.escape
 from image_match.signature_database import SignatureCollection
 from image_match.web import settings
+from image_match.web.base import RequestHandler
 
 
 
-class Home(tornado.web.RequestHandler):
+class Home(RequestHandler):
 
     def get(self):
         image_url = self.get_argument('image_url', None)

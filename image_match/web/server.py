@@ -1,9 +1,10 @@
+from image_match.web import settings
+
 import tornado.ioloop
 import tornado.web
 from tornado.options import options
 from tornado.log import enable_pretty_logging
 from image_match.web.handlers import api, pages
-from image_match.web import settings
 
 
 
