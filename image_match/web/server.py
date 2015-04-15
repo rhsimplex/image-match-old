@@ -15,11 +15,11 @@ enable_pretty_logging()
 
 
 application = tornado.web.Application([
-    (r'/favicon.ico', tornado.web.StaticFileHandler, {'path': settings.FAVICON_ICO}),
+    (r'/(favicon/.ico)', tornado.web.StaticFileHandler, {'path': settings.FAVICON_ICO}),
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': settings.STATIC_PATH}),
 
     (r'/search/(.*)', api.Search),
-    (r'/(.*)', pages.Home),
+    (r'/', pages.Home),
 ], debug=options.debug, template_path=settings.TEMPLATE_PATH)
 
 

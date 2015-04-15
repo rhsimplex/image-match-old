@@ -1,0 +1,18 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<div class="inner cover">
+    <h1 class="cover-heading">Search over {{total}} images.</h1>
+
+    <p class="lead">
+        <form>
+            <div class="form-group col-sm-8">
+                <label class="sr-only" for="exampleInputEmail3">URL</label>
+                <input type="text" name="image_url" class="form-control input-lg" placeholder="http://example.org/image.jpg">
+            </div>
+
+            <button type="submit" class="btn btn-default btn-lg col-sm-4">Search</button>
+        </form> 
+    </p>
+</div>
+{% end %}

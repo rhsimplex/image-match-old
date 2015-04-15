@@ -1,0 +1,34 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1>
+            {% if not len(result) %}
+            No
+            {% end %}
+            Matches for image
+        </h1>
+        <p class="col-sm-12">
+            <img class="img-responsive center-block" src="{{ image_url }}" />
+        </p>
+    </div>
+
+    <div class="row matches">
+        {% for r in result %}
+        <div class="col-sm-4">
+            <div class="match" style="background-image: url({{r['path']}})"></div>
+            <div class="actions">
+                <div class="dropdown">
+                    <a class="btn btn-default btn-xs"
+                       href="/?image_url={{escape(r['path'])}}">
+                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                        similar
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% end %}
+    </div>
+</div>
+{% end %}
