@@ -298,8 +298,8 @@ class SignatureCollection(object):
                         l.append(results[key])
 
             # join children
-            # for process in p:
-            #     process.join()
+            for process in p:
+                process.join()
 
             # yield a set of results
             yield l
