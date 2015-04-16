@@ -3,17 +3,14 @@
 ##Introduction
 Match images from the web against images in the EyeEm marketplace.  Try it in the browser at xxxxxxxx
 
-## API Documentation
-### Endpoints
-  * ** [Search](endpoints/similarity_search#files)**
 
 ## Basics
 ***
-The base URL is `http://CHANGETHIS/search/`
+The base URL is `http://labs.ascribe.io/eyeem/search/`
 
 A request using curl looks like:
 
-`$ curl http://CHANGETHIS/search/http://cdn.eyeem.com/thumb/640/480/12683532893904596226_26bbd8936e_o.jpg`
+`$ curl http://labs.ascribe.io/eyeem/search/http%3A%2F%2Fcdn.eyeem.com%2Fthumb%2F640%2F480%2F12683532893904596226_26bbd8936e_o.jpg`
 
 The ```dist``` field indicates how closely matched the images are. A perfect match has a ```dist``` value of ```0.0```.
 
@@ -64,29 +61,38 @@ The ```dist``` field indicates how closely matched the images are. A perfect mat
 }
 </pre>
 
+If an error occurs, the JSON will contain the key ``error``.
+<pre>
+{
+    "error": "Timeout downloading the image"
+}
+</pre>
+
+
+# API Documentation
+***
 ### Version
-***0.1 Beta***
+0.1 Beta
 
-Not yet implemented:
-* Rotation, mirroring, inversion is implemented but not yet turned on
-* Cropping resilience will be improved
+### Roadmap
+Features on the roadmap:
 
-# GET /search
-`/search`
+ * Rotation
+ * Mirroring
+ * Inversion is implemented but not yet turned on
+ * Cropping resilience will be improved
+
+
+## GET /search
+`/search/<image_url>`
+
+`<image_url>` should be encoded.
 
 ###Description
-***
 Retrieves matches to image found at the supplied URL
 
-### Parameters
-***
-|parameter| description| type| required? |default|
-|:---------|:--------------|:----------:|:------------:|:------------:|
-||URL to image | string | yes | none
-
 ### Response
-***
+200 and an array of ```{dist, path, id}``` image descriptions. In case of error, the returned JSON will contain the key ``error``
 
-200 and an array of ```{dist, path, id}``` image descriptions
 
 
