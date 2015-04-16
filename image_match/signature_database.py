@@ -183,7 +183,8 @@ class SignatureCollection(object):
         if len(self.collection.index_information()) <= 1:
             self.index_collection()
 
-    def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False):
+    def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
+                      process_timeout=None, maximum_matches=1000):
         """Makes an iterator to gets tne next match(es).
 
         Multiprocess find
@@ -192,6 +193,8 @@ class SignatureCollection(object):
         path_or_signature -- path to image or signature array
         n_parallel_words -- number of words to scan in parallel (default: number of physical processors times 2)
         word_limit -- limit the number of words to search (default None)
+        process_timeout -- how long to wait before joining a thread automatically (default None)
+        maximum_matches -- ignore columns with maximum_matches or more (default 1000)
         """
         if n_parallel_words is None:
             n_parallel_words = cpu_count()
@@ -275,7 +278,8 @@ class SignatureCollection(object):
                                            word_pair,
                                            self.collection,
                                            record['signature'],
-                                           self.distance_cutoff)))
+                                           self.distance_cutoff,
+                                           maximum_matches)))
 
             if verbose:
                 print '%i fresh cursors remain' % initial_q.qsize()
@@ -288,7 +292,7 @@ class SignatureCollection(object):
 
             # join children
             for process in p:
-                process.join()
+                process.join(process_timeout)
 
             # collect results, taking care not to return the same result twice
             l = list()
@@ -302,7 +306,8 @@ class SignatureCollection(object):
             # yield a set of results
             yield l
 
-    def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False):
+    def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False,
+                          process_timeout=1, maximum_matches=1000):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -317,6 +322,8 @@ class SignatureCollection(object):
         result_limit
         all_orientations -- check image against all 90 degree rotations, mirror images, color inversions, and
             combinations thereof (default False)
+        process_timeout -- how long to wait before joining a thread automatically, in seconds (default 1)
+        maximum_matches -- ignore columns with maximum_matches or more (default 1000)
         """
         # get initial image
         img = self.gis.preprocess_image(path)
@@ -332,7 +339,9 @@ class SignatureCollection(object):
         if all_results:
             return reduce(lambda a, b: a + b, list(self.parallel_find(path,
                                                                       n_parallel_words=n_parallel_words,
-                                                                      word_limit=word_limit)))
+                                                                      word_limit=word_limit,
+                                                                      process_timeout=process_timeout,
+                                                                      maximum_matches=maximum_matches)))
 
         if all_orientations:
             # initialize an iterator of composed transformations
@@ -515,7 +524,7 @@ def normalized_distance(target_array, vec):
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
 
-def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cursor=1000):
+def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cursor=100):
     """Scans a cursor for word matches below a distance threshold.
 
     Exhausts a cursor, possibly enqueuing many matches
