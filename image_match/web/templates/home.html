@@ -1,7 +1,7 @@
 {% extends '_base.html' %}
 
 {% block content %}
-<div class="inner cover">
+<div class="inner cover text-center">
     <h1 class="cover-heading">Search over {{total}} images.</h1>
 
     <p class="lead">
@@ -14,5 +14,20 @@
             <button type="submit" class="btn btn-default btn-lg col-sm-4">Search</button>
         </form> 
     </p>
+
+    <div class="row">
+        <h2 class="col-sm-12">Or try one of the images below</h2>
+    </div>
+
+    <div class="row matches">
+        {% for s in samples %}
+        <div class="col-sm-4">
+            <a class="" href="{{BASE_URL}}/?image_url={{escape(s['path'])}}">
+                <div class="match" style="background-image: url({{s['path']}})"></div>
+            </a>
+        </div>
+        {% end %}
+    </div>
+
 </div>
 {% end %}

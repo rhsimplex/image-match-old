@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <h1>
+        <h1 class="text-center">
             {% if not len(result) %}
             No
             {% end %}
@@ -14,7 +14,7 @@
         </p>
     </div>
 
-    <p>
+    <p class="text-center">
         <em>Lower scores indicate better matches.</em>
     </p>
 
@@ -22,7 +22,7 @@
         {% for r in result %}
         <div class="col-sm-4">
             <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{r['path']}})"></div>
-            <div class="actions">
+            <div class="actions text-center">
 
                 {% if r['dist'] == 0 %}
                 <span class="score label label-success">Perfect match!</span>
@@ -41,7 +41,7 @@
     </div>
 
     <div class="row">
-        <p>Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>
+        <p class="text-center">Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>
     </div>
 </div>
 {% end %}

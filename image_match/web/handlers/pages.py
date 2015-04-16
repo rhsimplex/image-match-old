@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 import tornado.web
 import time
+import markdown
 
 
 
@@ -26,7 +27,8 @@ class Home(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         else:
-            self.render('home.html', total='{}k'.format(self.collection.count() / 1000))
+            samples = list(self.collection.find().limit(6))
+            self.render('home.html', total='{}k'.format(self.collection.count() / 1000), samples=samples)
 
     def handle_download(self, response):
         if response.error:
@@ -52,4 +54,15 @@ class Home(RequestHandler):
                         round=lambda x: round(x, 3))
 
             os.unlink(f.name)
+
+
+
+class Documentation(RequestHandler):
+    def get(self, name):
+        try:
+            content = open(os.path.join(settings.TEMPLATE_PATH, 'md', name + '.md')).read()
+        except IOError:
+            raise tornado.web.HTTPError(404)
+
+        self.render('documentation.html', raw_html=markdown.markdown(content))
 
