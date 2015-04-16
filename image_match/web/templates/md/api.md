@@ -1,7 +1,7 @@
 # EyeEm Similarity Search API
 
 ##Introduction
-Match images from the web against images in the EyeEm marketplace.  Try it in the browser at xxxxxxxx
+Match images from the web against images in the EyeEm marketplace.  Try it in the browser at [labs.ascribe.io](http://labs.ascribe.io/eyeem/).
 
 
 ## Basics
