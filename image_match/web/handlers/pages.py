@@ -1,20 +1,49 @@
-import tornado.escape
+import os
 from image_match.signature_database import SignatureCollection
 from image_match.web import settings
 from image_match.web.base import RequestHandler
+from tempfile import NamedTemporaryFile
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+import tornado.web
+import time
 
 
 
 class Home(RequestHandler):
 
-    def get(self):
-        image_url = self.get_argument('image_url', None)
-        collection = settings.DB[settings.DEFAULT_COLLECTION]
+    def prepare(self):
+        self.image_url = self.get_argument('image_url', None)
+        self.collection = settings.DB[settings.DEFAULT_COLLECTION]
 
-        if image_url:
-            sc = SignatureCollection(collection)
-            d = sc.similarity_search(image_url)
-            self.render('result.html', result=d, image_url=image_url, escape=tornado.escape.url_escape)
+    @tornado.web.asynchronous
+    def get(self):
+
+        if self.image_url:
+            http_client = AsyncHTTPClient()
+            request = HTTPRequest(self.image_url,
+                                  user_agent=settings.USER_AGENT,
+                                  connect_timeout=settings.CONNECT_TIMEOUT,
+                                  request_timeout=settings.REQUEST_TIMEOUT)
+            http_client.fetch(request, self.handle_download)
         else:
-            self.render('home.html', total=collection.count())
+            self.render('home.html', total=self.collection.count())
+
+    def handle_download(self, response):
+        if response.error:
+            self.render('error.html', error=response.code)
+        else:
+            f = NamedTemporaryFile(delete=False)
+            f.write(response.body)
+            f.close()
+
+            sc = SignatureCollection(self.collection)
+            start_time = time.time()
+            d = sc.similarity_search(f.name, process_timeout=None)
+            self.render('result.html',
+                        result=d,
+                        image_url=self.image_url,
+                        request_time=response.request_time,
+                        lookup_time=time.time() - start_time)
+
+            os.unlink(f.name)
 
