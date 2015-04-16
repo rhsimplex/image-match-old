@@ -26,7 +26,7 @@ class Home(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         else:
-            self.render('home.html', total=self.collection.count())
+            self.render('home.html', total='{}k'.format(self.collection.count() / 1000))
 
     def handle_download(self, response):
         if response.error:
@@ -36,7 +36,7 @@ class Home(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureCollection(self.collection, distance_cutoff=0.45)
+            sc = SignatureCollection(self.collection, distance_cutoff=0.5)
             start_time = time.time()
 
             d = sc.similarity_search(f.name,
@@ -48,7 +48,8 @@ class Home(RequestHandler):
                         result=d,
                         image_url=self.image_url,
                         request_time=response.request_time,
-                        lookup_time=time.time() - start_time)
+                        lookup_time=time.time() - start_time,
+                        round=lambda x: round(x, 3))
 
             os.unlink(f.name)
 

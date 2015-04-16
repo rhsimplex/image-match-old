@@ -14,25 +14,34 @@
         </p>
     </div>
 
+    <p>
+        <em>Lower scores indicate better matches.</em>
+    </p>
+
     <div class="row matches">
         {% for r in result %}
         <div class="col-sm-4">
-            <div class="match" style="background-image: url({{r['path']}})"></div>
+            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{r['path']}})"></div>
             <div class="actions">
-                <div class="dropdown">
-                    <a class="btn btn-default btn-xs"
-                        href="{{BASE_URL}}/?image_url={{escape(r['path'])}}">
-                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-                        similar
-                    </a>
-                </div>
+
+                {% if r['dist'] == 0 %}
+                <span class="score label label-success">Perfect match!</span>
+                {% else %}
+                <span class="score label label-default">Score: {{round(r['dist'])}}</span>
+                {% end %}
+
+                <a class="btn btn-default btn-xs"
+                    href="{{BASE_URL}}/?image_url={{escape(r['path'])}}">
+                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                    similar
+                </a>
             </div>
         </div>
         {% end %}
     </div>
 
     <div class="row">
-        <p>Image download time {{request_time}}s; Lookup time {{lookup_time}}s</p>
+        <p>Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>
     </div>
 </div>
 {% end %}
