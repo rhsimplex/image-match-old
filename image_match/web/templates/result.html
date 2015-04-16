@@ -1,0 +1,47 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="text-center">
+            {% if not len(result) %}
+            No
+            {% end %}
+            Matches for image
+        </h1>
+        <p class="col-sm-12">
+            <img class="img-responsive center-block" src="{{ image_url }}" />
+        </p>
+    </div>
+
+    <p class="text-center">
+        <em>Lower scores indicate better matches.</em>
+    </p>
+
+    <div class="row matches">
+        {% for r in result %}
+        <div class="col-sm-4">
+            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{r['path']}})"></div>
+            <div class="actions text-center">
+
+                {% if r['dist'] == 0 %}
+                <span class="score label label-success">Perfect match!</span>
+                {% else %}
+                <span class="score label label-default">Score: {{round(r['dist'])}}</span>
+                {% end %}
+
+                <a class="btn btn-default btn-xs"
+                    href="{{BASE_URL}}/?image_url={{escape(r['path'])}}">
+                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                    similar
+                </a>
+            </div>
+        </div>
+        {% end %}
+    </div>
+
+    <div class="row">
+        <p class="text-center">Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>
+    </div>
+</div>
+{% end %}

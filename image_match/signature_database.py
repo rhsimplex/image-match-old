@@ -7,6 +7,8 @@ from multiprocessing import Pool, cpu_count, Process, Queue
 from multiprocessing.managers import Queue as managerQueue
 from pymongo.collection import Collection
 from functools import partial
+from operator import itemgetter
+
 
 class SignatureCollection(object):
     """Wrapper class for MongoDB collection.
@@ -290,18 +292,22 @@ class SignatureCollection(object):
             else:
                 raise StopIteration
 
-            # join children
-            for process in p:
-                process.join(process_timeout)
-
             # collect results, taking care not to return the same result twice
             l = list()
-            while not results_q.empty():
+            num_processes = len(p)
+
+            while num_processes:
                 results = results_q.get()
-                for key in results.keys():
-                    if key not in unique_results:
-                        unique_results.add(key)
-                        l.append(results[key])
+                if results == 'STOP':
+                    num_processes -= 1
+                else:
+                    for key in results.keys():
+                        if key not in unique_results:
+                            unique_results.add(key)
+                            l.append(results[key])
+
+            for process in p:
+                process.join()
 
             # yield a set of results
             yield l
@@ -337,11 +343,13 @@ class SignatureCollection(object):
                 word_limit = int(round(self.N**0.5))
 
         if all_results:
-            return reduce(lambda a, b: a + b, list(self.parallel_find(path,
+            l = reduce(lambda a, b: a + b, list(self.parallel_find(path,
                                                                       n_parallel_words=n_parallel_words,
                                                                       word_limit=word_limit,
                                                                       process_timeout=process_timeout,
                                                                       maximum_matches=maximum_matches_per_word)))
+            l = sorted(l, key=itemgetter('dist'))
+            return l
 
         if all_orientations:
             # initialize an iterator of composed transformations
@@ -546,7 +554,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
 
     # if the cursor has many matches, then it's probably not a huge help. Get the next one.
     if curs.count() > max_in_cursor:
-        result_q.close()
+        result_q.put('STOP')
         return
 
     matches = dict()
@@ -558,7 +566,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
                 matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
                 result_q.put(matches)
         except StopIteration:
-            result_q.close()
             # do nothing...the cursor is exhausted
             break
-    return
+    result_q.put('STOP')
+
