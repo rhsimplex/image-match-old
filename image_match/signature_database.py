@@ -286,6 +286,10 @@ class SignatureCollection(object):
             else:
                 raise StopIteration
 
+            # join children
+            for process in p:
+                process.join()
+
             # collect results, taking care not to return the same result twice
             l = list()
             while not results_q.empty():
@@ -294,10 +298,6 @@ class SignatureCollection(object):
                     if key not in unique_results:
                         unique_results.add(key)
                         l.append(results[key])
-
-            # join children
-            for process in p:
-                process.join()
 
             # yield a set of results
             yield l
@@ -547,3 +547,4 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
             result_q.close()
             # do nothing...the cursor is exhausted
             break
+    return
