@@ -326,6 +326,8 @@ class SignatureCollection(object):
 
         if word_limit is None:
             word_limit = 2 * cpu_count()
+            if word_limit < self.N**0.5:
+                word_limit = int(round(self.N**0.5))
 
         if all_results:
             return reduce(lambda a, b: a + b, list(self.parallel_find(path,
