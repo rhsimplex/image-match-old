@@ -288,18 +288,19 @@ class SignatureCollection(object):
             else:
                 raise StopIteration
 
-            # join children
-            for process in p:
-                process.join()
-
             # collect results, taking care not to return the same result twice
             l = list()
-            while not results_q.empty():
+            num_processes = len(p)
+
+            while num_processes:
                 results = results_q.get()
-                for key in results.keys():
-                    if key not in unique_results:
-                        unique_results.add(key)
-                        l.append(results[key])
+                if results == 'STOP':
+                    num_processes -= 1
+                else:
+                    for key in results.keys():
+                        if key not in unique_results:
+                            unique_results.add(key)
+                            l.append(results[key])
 
             # yield a set of results
             yield l
@@ -541,7 +542,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
 
     # if the cursor has many matches, then it's probably not a huge help. Get the next one.
     if curs.count() > max_in_cursor:
-        result_q.close()
+        result_q.put('STOP')
         return
 
     matches = dict()
@@ -553,8 +554,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
                 matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
                 result_q.put(matches)
         except StopIteration:
-            result_q.close()
             # do nothing...the cursor is exhausted
             break
-    return
+    result_q.put('STOP')
 
