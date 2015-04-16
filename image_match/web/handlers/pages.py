@@ -36,9 +36,14 @@ class Home(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureCollection(self.collection)
+            sc = SignatureCollection(self.collection, distance_cutoff=0.45)
             start_time = time.time()
-            d = sc.similarity_search(f.name, process_timeout=None)
+
+            d = sc.similarity_search(f.name,
+                                     process_timeout=1,
+                                     maximum_matches_per_word=100)
+
+
             self.render('result.html',
                         result=d,
                         image_url=self.image_url,
