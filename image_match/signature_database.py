@@ -312,8 +312,8 @@ class SignatureCollection(object):
         "reason": dict of definite or possible matches}
 
         path -- path or url to image
-        n_parallel_words -- number of parallel processes to use (default 1)
-        word_limit -- limit number of words to search against (default None)
+        n_parallel_words -- number of parallel processes to use (default CPU count)
+        word_limit -- limit number of words to search against (default 2 * CPU count)
         result_limit
         all_orientations -- check image against all 90 degree rotations, mirror images, color inversions, and
             combinations thereof (default False)
@@ -323,6 +323,9 @@ class SignatureCollection(object):
 
         if n_parallel_words is None:
             n_parallel_words = cpu_count()
+
+        if word_limit is None:
+            word_limit = 2 * cpu_count()
 
         if all_results:
             return reduce(lambda a, b: a + b, list(self.parallel_find(path,
