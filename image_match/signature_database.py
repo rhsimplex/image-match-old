@@ -307,7 +307,7 @@ class SignatureCollection(object):
             yield l
 
     def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False,
-                          process_timeout=1, maximum_matches=1000):
+                          process_timeout=1, maximum_matches_per_word=1000):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -341,7 +341,7 @@ class SignatureCollection(object):
                                                                       n_parallel_words=n_parallel_words,
                                                                       word_limit=word_limit,
                                                                       process_timeout=process_timeout,
-                                                                      maximum_matches=maximum_matches)))
+                                                                      maximum_matches=maximum_matches_per_word)))
 
         if all_orientations:
             # initialize an iterator of composed transformations
