@@ -1,13 +1,10 @@
 from goldberg import ImageSignature
 import numpy as np
 from itertools import product
-from os import listdir
-from os.path import join
-from multiprocessing import Pool, cpu_count, Process, Queue
-from multiprocessing.managers import Queue as managerQueue
+from multiprocessing import cpu_count
 from elasticsearch import Elasticsearch
-from functools import partial
 from operator import itemgetter
+from datetime import datetime
 
 
 class SignatureES(object):
@@ -89,15 +86,19 @@ class SignatureES(object):
         self.integer_encoding = integer_encoding
 
         # Create ES index, if none exists
-        if self.collection.count() > 0:
-            es.indices.create(index=index, ignore=400)
+        self.index = index
+        self.doc_type = doc_type
+        es.indices.create(index=index, ignore=400)
 
     def add_images(self, image_dir_or_list, drop_collection=False, limit=None, verbose=False,
                    insert_block_size=100000, n_processes=None):
         raise NotImplementedError
 
-    def add_image(self, path):
-        raise NotImplementedError
+    def add_image(self, path, img=None, path_as_id=False):
+        rec = make_record(path, self.gis, self.k, self.N, img,
+                          integer_encoding=self.integer_encoding, path_as_id=path_as_id)
+        rec['timestamp'] = datetime.now()
+        self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=1000):
