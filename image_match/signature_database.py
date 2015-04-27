@@ -5,29 +5,28 @@ from os import listdir
 from os.path import join
 from multiprocessing import Pool, cpu_count, Process, Queue
 from multiprocessing.managers import Queue as managerQueue
-from pymongo.collection import Collection
+from elasticsearch import Elasticsearch
 from functools import partial
 from operator import itemgetter
 
 
-class SignatureCollection(object):
+class SignatureES(object):
     """Wrapper class for MongoDB collection.
 
     See section 2 of Goldberg et al, available at:
 
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
     """
-    def __init__(self, collection, k=16, N=63, n_grid=9,
+    def __init__(self, es, index='images', doc_type='image', k=16, N=63, n_grid=9,
                  distance_cutoff=0.5, definite_match_cutoff=0.40,
                  integer_encoding=True, fix_ratio=False,
                  crop_percentile=(5, 95)):
         """Initialize SignatureCollection object
 
         Keyword arguments:
-        collection -- MongoDB collection. Can be empty or populated.
-            Currently there is no schema checking, so passing a coll-
-            ection not created by an instance of SignatureCollection
-            may cause bizarre behavior
+        es -- the ElasticSearch object
+        index -- the name of the elastic search index (default 'images')
+        doc_type -- the name of the elastic search doc_type (default 'image')
         k -- word length
         N -- number of words (default 63; max 64 indexes for MongoDB, need to leave
             one for _id_)
@@ -41,11 +40,11 @@ class SignatureCollection(object):
             ...use with care!
         """
 
-        # Check that collection is a MongoDB collection
-        if type(collection) is not Collection:
-            raise TypeError('Expected MongoDB collection, got %r' % type(collection))
+        # Check that collection is a ElasticSearch object
+        if type(es) is not Elasticsearch:
+            raise TypeError('Expected ElasticSearch object, got %r' % type(es))
 
-        self.collection = collection
+        self.es = es
 
         # Check integer inputs
         if type(k) is not int:
@@ -89,228 +88,20 @@ class SignatureCollection(object):
 
         self.integer_encoding = integer_encoding
 
-        # Extract index fields, if any exist yet
+        # Create ES index, if none exists
         if self.collection.count() > 0:
-            self.index_names = [field for field in self.collection.find_one({}).keys()
-                                if field.find('simple') > -1]
+            es.indices.create(index=index, ignore=400)
 
     def add_images(self, image_dir_or_list, drop_collection=False, limit=None, verbose=False,
                    insert_block_size=100000, n_processes=None):
-        """Bulk adds images to database.
-
-        Probably not very efficient, but fine for prototyping.
-
-        Keyword arguments:
-        image_dir -- directory with images (note: directory should contain only
-            images; no checking of any kind is done)
-        drop_collection -- remove current entries prior to insertion (default False)
-        limit -- maximum records to create, to nearest block (default None)
-        verbose -- enable console output (default False)
-        insert_block_size -- number of records to bulk insert at a time (default 1000)
-        n_processes -- number of threads to use. If None, use number of CPUs (default none)
-            Note that this only applies to record generation.  Parallelism for insertion
-            is handled by the MongoDB internals.
-        """
-        if drop_collection:
-            self.collection.remove({})
-            self.collection.drop_indexes()
-            if verbose:
-                print 'Collection contents dropped.'
-
-        if n_processes is None:
-            n_processes = cpu_count()
-
-        if verbose:
-            print 'Using %i processes.' % (2 * n_processes)
-
-        pool = Pool(2 * n_processes)
-
-        if type(image_dir_or_list) is str:
-            image_dir = image_dir_or_list
-            image_paths = map(lambda x: join(image_dir, x), listdir(image_dir))
-        elif type(image_dir_or_list) is list:
-            image_paths = image_dir_or_list
-        else:
-            raise ValueError('A directory name or list of files is required')
-
-        if limit is None:
-            limit = len(image_paths)
-        if verbose:
-            print '%i files found in %s.' % (limit, image_dir)
-
-        partial_mr = partial(make_record,
-                             gis=self.gis, k=self.k, N=self.N)
-        # Insert image signatures and words
-        for i in range(0, len(image_paths), insert_block_size):
-            if i < limit:
-                recs = pool.map(partial_mr, image_paths[i : i + insert_block_size])
-            else:
-                recs = pool.map(partial_mr, image_paths[i : limit])
-            self.collection.insert(recs)
-
-            if verbose:
-                print 'Inserted %s records.' % str(i + insert_block_size)
-
-        if verbose:
-            print 'Total %i records inserted.' % self.collection.count()
-
-        self.index_collection(verbose=verbose)
-
-    def index_collection(self, verbose=False):
-        """Index a collection on words.
-
-        Keyword arguments:
-        verbose -- enable console output (default False)
-        """
-
-        # Index on words
-        self.index_names = [field for field in self.collection.find_one({}).keys()\
-                if field.find('simple') > -1]
-        for name in self.index_names:
-            self.collection.create_index(name)
-            if verbose:
-                print 'Indexed %s' % name
+        raise NotImplementedError
 
     def add_image(self, path):
-        """Inserts a single image.
-
-        Creates indexes if this is the first entry.
-
-        Keyword arguments:
-        path -- path to image
-        """
-        self.collection.insert(make_record(path, gis=self.gis, k=self.k, N=self.N))
-
-        # if the collection has no indexes (except possibly '_id'), build them
-        if len(self.collection.index_information()) <= 1:
-            self.index_collection()
+        raise NotImplementedError
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=1000):
-        """Makes an iterator to gets tne next match(es).
-
-        Multiprocess find
-
-        Keyword arguments:
-        path_or_signature -- path to image or signature array
-        n_parallel_words -- number of words to scan in parallel (default: number of physical processors times 2)
-        word_limit -- limit the number of words to search (default None)
-        process_timeout -- how long to wait before joining a thread automatically (default None)
-        maximum_matches -- ignore columns with maximum_matches or more (default 1000)
-        """
-        if n_parallel_words is None:
-            n_parallel_words = cpu_count()
-
-        if word_limit is None:
-            word_limit = self.N
-
-        # check if an array (signature) was passed. If so, generate the words here:
-        if type(path_or_signature) is np.ndarray:
-            record = dict()
-            words = get_words(path_or_signature, self.k, self.N)
-            max_contrast(words)
-            for i in range(self.N):
-                record[''.join(['simple_word_', str(i)])] = words[i].tolist()
-            record['signature'] = path_or_signature
-
-        # otherwise, generate the record in the usual way
-        else:
-            # Don't encode words yet because we need to compute stds
-            record = make_record(path_or_signature, self.gis, self.k, self.N, integer_encoding=False)
-
-        # Generate standard deviations of each word vector.
-        stds = dict()
-        for word_name in self.index_names:
-            stds[word_name] = np.std(record[word_name])
-
-        keys = list(stds.keys())
-        vals = list(stds.values())
-
-        # Fill a queue with {word: word_val} pairs in order of std up to the word limit
-        initial_q = managerQueue.Queue()
-        while len(stds) > (self.N - word_limit):
-            max_val = max(vals)
-            max_pos = vals.index(max_val)
-            max_word = keys[max_pos]
-
-            stds.pop(max_word)
-            vals.pop(max_pos)
-            keys.pop(max_pos)
-
-            if verbose:
-                print '%s %f' % (max_word, max_val)
-                print record[max_word]
-
-            initial_q.put(
-                {max_word: words_to_int(np.array([record[max_word]]))[0]}
-            )
-
-        # enqueue a sentinel value so we know we have reached the end of the queue
-        initial_q.put('STOP')
-        queue_empty = False
-
-        if verbose:
-            print 'Queue length: %i' % initial_q.qsize()
-
-        # create an empty queue for results
-        results_q = Queue()
-
-        # create a set of unique results, using MongoDB _id field
-        unique_results = set()
-
-        # begin iterator
-        while True:
-            # if all there are no more cursors, kill iterator
-            if queue_empty:
-                # Queue.empty is not reliable. The iteration will be stopped by the sentinel value
-                # (the last item in the queue)
-                raise StopIteration
-
-            # build children processes, taking cursors from in_process queue first, then initial queue
-            p = list()
-            while len(p) < n_parallel_words:
-                word_pair = initial_q.get()
-                if word_pair == 'STOP':
-                    # if we reach the sentinel value, set the flag and stop queuing processes
-                    queue_empty = True
-                    break
-                if not initial_q.empty():
-                    p.append(Process(target=get_next_match,
-                                     args=(results_q,
-                                           word_pair,
-                                           self.collection,
-                                           record['signature'],
-                                           self.distance_cutoff,
-                                           maximum_matches)))
-
-            if verbose:
-                print '%i fresh cursors remain' % initial_q.qsize()
-
-            if len(p) > 0:
-                for process in p:
-                    process.start()
-            else:
-                raise StopIteration
-
-            # collect results, taking care not to return the same result twice
-            l = list()
-            num_processes = len(p)
-
-            while num_processes:
-                results = results_q.get()
-                if results == 'STOP':
-                    num_processes -= 1
-                else:
-                    for key in results.keys():
-                        if key not in unique_results:
-                            unique_results.add(key)
-                            l.append(results[key])
-
-            for process in p:
-                process.join()
-
-            # yield a set of results
-            yield l
+        raise NotImplementedError
 
     def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False,
                           process_timeout=1, maximum_matches_per_word=1000):
@@ -331,6 +122,7 @@ class SignatureCollection(object):
         process_timeout -- how long to wait before joining a thread automatically, in seconds (default 1)
         maximum_matches -- ignore columns with maximum_matches or more (default 1000)
         """
+        raise NotImplementedError
         # get initial image
         img = self.gis.preprocess_image(path)
 
@@ -530,43 +322,4 @@ def normalized_distance(target_array, vec):
     # use broadcasting
     return np.linalg.norm(vec - target_array, axis=1)\
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
-
-
-def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cursor=100):
-    """Scans a cursor for word matches below a distance threshold.
-
-    Exhausts a cursor, possibly enqueuing many matches
-
-    Note that placing this function outside the SignatureCollection
-    class breaks encapsulation.  This is done for compatibility with 
-    multiprocessing.
-
-    Keyword arguments:
-    result_q -- a multiprocessing queue in which to queue results
-    word -- {word_name: word_value} dict to scan against
-    collection -- a pymongo collection
-    signature -- signature array to match against
-    cutoff -- normalized distance limit (default 0.5)
-    max_in_cursor -- if more than max_in_cursor matches are in the cursor,
-        ignore this cursor; this column is not discriminatory
-    """
-    curs = collection.find(word, fields=['_id', 'signature', 'path'])
-
-    # if the cursor has many matches, then it's probably not a huge help. Get the next one.
-    if curs.count() > max_in_cursor:
-        result_q.put('STOP')
-        return
-
-    matches = dict()
-    while True:
-        try:
-            rec = curs.next()
-            dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
-            if dist < cutoff:
-                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
-                result_q.put(matches)
-        except StopIteration:
-            # do nothing...the cursor is exhausted
-            break
-    result_q.put('STOP')
 
