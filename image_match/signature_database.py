@@ -1,11 +1,14 @@
 from goldberg import ImageSignature
 import numpy as np
 from itertools import product
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Process
+from multiprocessing.managers import Queue as managerQueue
 from elasticsearch import Elasticsearch
 from operator import itemgetter
 from datetime import datetime
-
+from os import listdir
+from os.path import join
+from Queue import Queue
 
 class SignatureES(object):
     """Wrapper class for MongoDB collection.
@@ -90,9 +93,13 @@ class SignatureES(object):
         self.doc_type = doc_type
         es.indices.create(index=index, ignore=400)
 
-    def add_images(self, image_dir_or_list, drop_collection=False, limit=None, verbose=False,
-                   insert_block_size=100000, n_processes=None):
-        raise NotImplementedError
+    def add_images(self, image_dir='.'):
+        """Minimal batch adding, ignore non-images, all exceptions"""
+        for path in listdir(image_dir):
+            try:
+                self.add_image(join(image_dir, path))
+            except Exception as e:
+                pass
 
     def add_image(self, path, img=None, path_as_id=False):
         rec = make_record(path, self.gis, self.k, self.N, img,
@@ -102,7 +109,131 @@ class SignatureES(object):
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=1000):
-        raise NotImplementedError
+        """Makes an iterator to gets tne next match(es).
+
+        Multiprocess find
+
+        Keyword arguments:
+        path_or_signature -- path to image or signature array
+        n_parallel_words -- number of words to scan in parallel (default: number of physical processors times 2)
+        word_limit -- limit the number of words to search (default None)
+        process_timeout -- how long to wait before joining a thread automatically (default None)
+        maximum_matches -- ignore columns with maximum_matches or more (default 1000)
+        """
+        if n_parallel_words is None:
+            n_parallel_words = cpu_count()
+
+        if word_limit is None:
+            word_limit = self.N
+
+        # check if an array (signature) was passed. If so, generate the words here:
+        if type(path_or_signature) is np.ndarray:
+            record = dict()
+            words = get_words(path_or_signature, self.k, self.N)
+            max_contrast(words)
+            for i in range(self.N):
+                record[''.join(['simple_word_', str(i)])] = words[i].tolist()
+            record['signature'] = path_or_signature
+
+        # otherwise, generate the record in the usual way
+        else:
+            # Don't encode words yet because we need to compute stds
+            record = make_record(path_or_signature, self.gis, self.k, self.N, integer_encoding=False)
+
+        # Generate standard deviations of each word vector.
+        stds = dict()
+        for word_name in self.index_names:
+            stds[word_name] = np.std(record[word_name])
+
+        keys = list(stds.keys())
+        vals = list(stds.values())
+
+        # Fill a queue with {word: word_val} pairs in order of std up to the word limit
+        initial_q = managerQueue.Queue()
+        while len(stds) > (self.N - word_limit):
+            max_val = max(vals)
+            max_pos = vals.index(max_val)
+            max_word = keys[max_pos]
+
+            stds.pop(max_word)
+            vals.pop(max_pos)
+            keys.pop(max_pos)
+
+            if verbose:
+                print '%s %f' % (max_word, max_val)
+                print record[max_word]
+
+            initial_q.put(
+                {max_word: words_to_int(np.array([record[max_word]]))[0]}
+            )
+
+        # enqueue a sentinel value so we know we have reached the end of the queue
+        initial_q.put('STOP')
+        queue_empty = False
+
+        if verbose:
+            print 'Queue length: %i' % initial_q.qsize()
+
+        # create an empty queue for results
+        results_q = Queue()
+
+        # create a set of unique results, using MongoDB _id field
+        unique_results = set()
+
+        # begin iterator
+        while True:
+            # if all there are no more cursors, kill iterator
+            if queue_empty:
+                # Queue.empty is not reliable. The iteration will be stopped by the sentinel value
+                # (the last item in the queue)
+                raise StopIteration
+
+            # build children processes, taking cursors from in_process queue first, then initial queue
+            p = list()
+            while len(p) < n_parallel_words:
+                word_pair = initial_q.get()
+                if word_pair == 'STOP':
+                    # if we reach the sentinel value, set the flag and stop queuing processes
+                    queue_empty = True
+                    break
+                if not initial_q.empty():
+                    p.append(Process(target=get_next_matches,
+                                     args=(results_q,
+                                           word_pair,
+                                           self.es,
+                                           self.index,
+                                           record['signature'],
+                                           self.distance_cutoff,
+                                           maximum_matches)))
+
+            if verbose:
+                print '%i fresh cursors remain' % initial_q.qsize()
+
+            if len(p) > 0:
+                for process in p:
+                    process.start()
+            else:
+                raise StopIteration
+
+            # collect results, taking care not to return the same result twice
+            l = list()
+            num_processes = len(p)
+
+            while num_processes:
+                results = results_q.get()
+                if results == 'STOP':
+                    num_processes -= 1
+                else:
+                    for key in results.keys():
+                        if key not in unique_results:
+                            unique_results.add(key)
+                            l.append(results[key])
+
+            for process in p:
+                process.join()
+
+            # yield a set of results
+            yield l
 
     def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False,
                           process_timeout=1, maximum_matches_per_word=1000):
@@ -324,3 +455,48 @@ def normalized_distance(target_array, vec):
     return np.linalg.norm(vec - target_array, axis=1)\
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
+def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_in_cursor=100):
+    """Scans a cursor for word matches below a distance threshold.
+
+    Exhausts a cursor, possibly enqueuing many matches
+
+    Note that placing this function outside the SignatureCollection
+    class breaks encapsulation.  This is done for compatibility with
+    multiprocessing.
+
+    Keyword arguments:
+    result_q -- a multiprocessing queue in which to queue results
+    word -- {word_name: word_value} dict to scan against
+    es -- an elasticsearch object
+    index_name -- an elasticsearch index name
+    signature -- signature array to match against
+    cutoff -- normalized distance limit (default 0.5)
+    max_in_cursor -- if more than max_in_cursor matches are in the cursor,
+        ignore this cursor; this column is not discriminatory
+    """
+    res = es.search(index=index_name,
+                    body={
+                        'query': {
+                            'match': word
+                        }
+                    },
+                    fields=['path', 'signature'],
+                    size=max_in_cursor)
+
+    # if the cursor has many matches, then it's probably not a huge help. Get the next one.
+    if res['hits']['total'] > max_in_cursor:
+        result_q.put('STOP')
+        return
+
+    matches = dict()
+    while True:
+        try:
+            rec = curs.next()
+            dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
+            if dist < cutoff:
+                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
+                result_q.put(matches)
+        except StopIteration:
+            # do nothing...the cursor is exhausted
+            break
+    result_q.put('STOP')
