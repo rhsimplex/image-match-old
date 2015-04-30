@@ -22,7 +22,7 @@
     <div class="row matches">
         {% for s in samples %}
         <div class="col-sm-4">
-            <a class="" href="{{BASE_URL}}/?image_url={{escape(s['path'])}}">
+            <a class="" href="{{BASE_URL}}/{{market}}/?image_url={{escape(s['path'])}}">
                 <div class="match" style="background-image: url({{s['path']}})"></div>
             </a>
         </div>

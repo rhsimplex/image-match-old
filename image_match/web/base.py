@@ -26,10 +26,19 @@ class SimilaritySearchHandler(RequestHandler):
 
     def prepare(self):
         self.image_url = self.get_argument('image_url', None)
-        self.collection = settings.DB[settings.DEFAULT_COLLECTION]
 
     @tornado.web.asynchronous
-    def get(self):
+    def get(self, market):
+        if market.endswith('/'):
+            market = market[:-1]
+
+        self.market = market
+
+        try:
+            self.collection = settings.DB[settings.COLLECTION_MAP[market]]
+        except KeyError:
+            raise tornado.web.HTTPError(404)
+
         if self.image_url:
             http_client = AsyncHTTPClient()
             request = HTTPRequest(self.image_url,
