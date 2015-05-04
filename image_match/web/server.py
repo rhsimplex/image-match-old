@@ -23,9 +23,9 @@ application = tornado.web.Application([
 
     (r'/(.+)/docs/(.*)', pages.Documentation),
 
-    (r'/(.+)/api/search/(.*)', api.Search),
+    (r'/(.+)/api/search/', api.Search),
 
-    (r'/(.+)', pages.Home),
+    (r'/(.+)/', pages.Home),
 ], debug=options.debug, template_path=settings.TEMPLATE_PATH)
 
 

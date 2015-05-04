@@ -65,7 +65,7 @@ class SimilaritySearchHandler(RequestHandler):
                                      maximum_matches_per_word=100)
 
             os.unlink(f.name)
-            self.handle_response(d, self.image_url, response.request_time,
+            self.handle_response(d, response.request_time,
                                  time.time() - start_time)
 
     def handle_empty_query(self):
@@ -74,5 +74,5 @@ class SimilaritySearchHandler(RequestHandler):
     def handle_error(self, error):
         raise NotImplementedError
 
-    def handle_response(self, result, image_url, request_time, lookup_time):
+    def handle_response(self, result, request_time, lookup_time):
         raise NotImplementedError

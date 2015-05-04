@@ -10,7 +10,7 @@ The base URL is `http://labs.ascribe.io/{{market}}/search/`
 
 A request using curl looks like:
 
-`$ curl http://labs.ascribe.io/{{market}}/api/search/http%3A%2F%2Fcdn...com%2Fthumb%2F640%2F480%2....jpg`
+`$ curl http://labs.ascribe.io/{{market}}/api/search/?image_url=http%3A%2F%2Fcdn...com%2Fthumb%2F640%2F480%2....jpg`
 
 The ```dist``` field indicates how closely matched the images are. A perfect match has a ```dist``` value of ```0.0```.
 
@@ -84,9 +84,9 @@ Features on the roadmap:
 
 
 ## GET /search
-`http://labs.ascribe.io/{{market}}/api/search/<image_url>`
+`http://labs.ascribe.io/{{market}}/api/search/?image_url=<image_url>`
 
-`<image_url>` should be encoded.
+`?image_url=<image_url>` should be encoded.
 
 ###Description
 Retrieves matches to image found at the supplied URL
