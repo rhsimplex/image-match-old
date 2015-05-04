@@ -22,7 +22,7 @@ BASE_URL = ''
 COLLECTION_MAP = {
     'eyeem': 'eyeem_market',
     'direct2artist': 'direct2artist',
-    'eyeem_global': 'crawl_images'
+    'global': 'crawl_images'
 }
 
 try:

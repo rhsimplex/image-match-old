@@ -9,6 +9,7 @@ class Home(SimilaritySearchHandler):
 
     def handle_empty_query(self):
         samples = list(self.collection.find().limit(6))
+        self.normalize_results(samples)
         self.render('home.html',
                     market=self.market,
                     total='{}k'.format(self.collection.count() / 1000),
