@@ -10,7 +10,7 @@
             Matches for image
         </h1>
         <p class="col-sm-12">
-            <img class="img-responsive center-block" src="{{ image_url }}" />
+            <img class="img-responsive center-block" src="{{quote(image_url)}}" />
         </p>
     </div>
 
@@ -21,7 +21,7 @@
     <div class="row matches">
         {% for r in result %}
         <div class="col-sm-4">
-            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{r['path']}})"></div>
+            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{quote(r['path'])}})"></div>
             <div class="actions text-center">
 
                 {% if r['dist'] == 0 %}

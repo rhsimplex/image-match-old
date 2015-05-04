@@ -23,7 +23,7 @@
         {% for s in samples %}
         <div class="col-sm-4">
             <a class="" href="{{BASE_URL}}/{{market}}/?image_url={{escape(s['path'])}}">
-                <div class="match" style="background-image: url({{s['path']}})"></div>
+                <div class="match" style="background-image: url({{quote(s['path'])}})"></div>
             </a>
         </div>
         {% end %}

@@ -4,9 +4,14 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from image_match.web import settings
 from image_match.signature_database import SignatureCollection
 from tempfile import NamedTemporaryFile
+import urllib
 import os
 import time
 import markdown
+
+
+def quote(uri):
+    return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
 
 
 class RequestHandler(tornado.web.RequestHandler):
@@ -16,6 +21,7 @@ class RequestHandler(tornado.web.RequestHandler):
         ns.update({
             'BASE_URL': settings.BASE_URL,
             'escape': tornado.escape.url_escape,
+            'quote': quote,
             'markdown': markdown.markdown
         })
 
