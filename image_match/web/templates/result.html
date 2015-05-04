@@ -40,6 +40,11 @@
         {% end %}
     </div>
 
+    <p class="row">
+        <p>Go to the <a class="btn btn-default btn-xs" href="{{BASE_URL}}/{{market}}/api/search/?image_url={{escape(image_url)}}">JSON endpoint</a> or try to run this query with curl:</p>
+        <pre>curl http://labs.ascribe.io/similarity/{{market}}/api/search/?image_url={{escape(image_url)}}</pre>
+    </p>
+
     <div class="row">
         <p class="text-center">Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>
     </div>
