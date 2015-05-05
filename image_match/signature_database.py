@@ -11,7 +11,7 @@ from os.path import join
 from Queue import Queue
 
 class SignatureES(object):
-    """Wrapper class for MongoDB collection.
+    """Wrapper class for ElasticSearch object.
 
     See section 2 of Goldberg et al, available at:
 
