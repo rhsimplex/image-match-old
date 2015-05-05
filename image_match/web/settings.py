@@ -20,6 +20,7 @@ FAVICON_ICO = '/'.join([STATIC_PATH, 'favicon.ico'])
 BASE_URL = ''
 
 COLLECTION_MAP = {
+    'photos': 'eyeem_market',
     'eyeem': 'eyeem_market',
     'direct2artist': 'direct2artist',
     'eyeem_global': 'crawl_images'
