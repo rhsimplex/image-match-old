@@ -455,10 +455,9 @@ def normalized_distance(target_array, vec):
     return np.linalg.norm(vec - target_array, axis=1)\
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
-def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_in_cursor=100):
-    """Scans a cursor for word matches below a distance threshold.
 
-    Exhausts a cursor, possibly enqueuing many matches
+def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_in_cursor=100):
+    """Scans an index for word matches below a distance threshold.
 
     Note that placing this function outside the SignatureCollection
     class breaks encapsulation.  This is done for compatibility with
@@ -488,15 +487,21 @@ def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_
         result_q.put('STOP')
         return
 
+    # make a signature array, n x len(sig)
+    signature_target_array = np.array([item['_source']['signature'] for item in res['hits']['hits']], dtype='int8')
+
+    # make the target array, len(sig)
+    signature_vec = np.array(signature, dtype='int8')
+
+    # compute the distances
+    distances = normalized_distance(signature_target_array, signature_vec).tolist()
+
     matches = dict()
-    while True:
-        try:
-            rec = curs.next()
-            dist = normalized_distance([signature], np.array(rec['signature'], dtype='int8'))[0]
-            if dist < cutoff:
-                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
-                result_q.put(matches)
-        except StopIteration:
-            # do nothing...the cursor is exhausted
-            break
+    for i, dist in enumerate(distances):
+        if dist < cutoff:
+            id_str = res['hits']['hits'][i]['_id']
+            matches[id_str] = {'dist': dist,
+                               'path': res['hits']['hits'][i]['_source']['path'],
+                               'id': id_str}
+            result_q.put(matches)
     result_q.put('STOP')
