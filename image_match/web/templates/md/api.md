@@ -1,16 +1,16 @@
-# EyeEm Similarity Search API
+# {{market}} Similarity Search API
 
 ##Introduction
-Match images from the web against images in the EyeEm marketplace.  Try it in the browser at [labs.ascribe.io](http://labs.ascribe.io/eyeem/).
+Match images from the web against images in the {{market}} marketplace.  Try it in the browser at [labs.ascribe.io/{{market}}](http://labs.ascribe.io/{{market}}/).
 
 
 ## Basics
 ***
-The base URL is `http://labs.ascribe.io/eyeem/search/`
+The base URL is `http://labs.ascribe.io/{{market}}/search/`
 
 A request using curl looks like:
 
-`$ curl http://labs.ascribe.io/eyeem/search/http%3A%2F%2Fcdn.eyeem.com%2Fthumb%2F640%2F480%2F12683532893904596226_26bbd8936e_o.jpg`
+`$ curl http://labs.ascribe.io/{{market}}/api/search/?image_url=http%3A%2F%2Fcdn...com%2Fthumb%2F640%2F480%2....jpg`
 
 The ```dist``` field indicates how closely matched the images are. A perfect match has a ```dist``` value of ```0.0```.
 
@@ -18,42 +18,42 @@ The ```dist``` field indicates how closely matched the images are. A perfect mat
 {
     "result": [
         {
-            "path": "http://www.eyeem.com/thumb/640/480/12683532893904596226_26bbd8936e_o.jpg",
+            "path": "http://www.{{market}}.com/img1.jpg",
             "dist": 0,
             "id": 12
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/de05a37ae69d9a2a8280ae2c243c2645e2046d2c-1337985253",
+            "path": "http://www.{{market}}.com/img2.jpg",
             "dist": 0.43739087511375,
             "id": 528492
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/491e4385482726023f0d60e3e2ba8bfc93c6bf9d-1389497502",
+            "path": "http://www.{{market}}.com/img3.jpg",
             "dist": 0.4438784282276083,
             "id": 27482264
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/07a9d6a0c422363f2570c3b973c23a7c6fb131cf-1389573626",
+            "path": "http://www.{{market}}.com/img4.jpg",
             "dist": 0.4500463733919593,
             "id": 27550153
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/7ce63ce7a4e355bf98d431d23e9d515b9c0d3f3d-1382519368",
+            "path": "http://www.{{market}}.com/img5.jpg",
             "dist": 0.46666245188890754,
             "id": 22654175
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/3ba34f3934d84f8fdcaa306044b33a5c4583c1d2-1392830857",
+            "path": "http://www.{{market}}.com/img6.jpg",
             "dist": 0.4687795429136797,
             "id": 30254571
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/bcf73e104a60e046341a45a75d25bc0ae5b2c338-1385909727",
+            "path": "http://www.{{market}}.com/img7.jpg",
             "dist": 0.4719155672668924,
             "id": 24884288
         },
         {
-            "path": "http://www.eyeem.com/thumb/640/480/26151dd2148bebc36c9d64113fb4cc1bb10e7431-1370539530",
+            "path": "http://www.{{market}}.com/img8.jpg",
             "dist": 0.4821427959813869,
             "id": 14152888
         }
@@ -84,9 +84,9 @@ Features on the roadmap:
 
 
 ## GET /search
-`/search/<image_url>`
+`http://labs.ascribe.io/{{market}}/api/search/?image_url=<image_url>`
 
-`<image_url>` should be encoded.
+`?image_url=<image_url>` should be encoded.
 
 ###Description
 Retrieves matches to image found at the supplied URL
