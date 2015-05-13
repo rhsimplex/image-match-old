@@ -1,14 +1,14 @@
 from goldberg import ImageSignature
 import numpy as np
 from itertools import product
-from multiprocessing import cpu_count, Process
+from multiprocessing import cpu_count, Process, Queue
 from multiprocessing.managers import Queue as managerQueue
 from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
 from operator import itemgetter
 from datetime import datetime
 from os import listdir
 from os.path import join
-from Queue import Queue
 
 class SignatureES(object):
     """Wrapper class for ElasticSearch object.
@@ -91,7 +91,19 @@ class SignatureES(object):
         # Create ES index, if none exists
         self.index = index
         self.doc_type = doc_type
-        es.indices.create(index=index, ignore=400)
+        es.indices.create(index=self.index, ignore=400)
+
+        # Extract index fields, if any exist yet
+        try:
+            example_res = self.es.search(index=self.index, size=1)
+            if example_res['hits']['total'] > 0:
+                self.index_names = [field for field in
+                                    example_res['hits']['hits'][0]['_source'].keys()
+                                    if field.find('simple') > -1]
+
+        except (NotFoundError, IndexError):
+            # index doesn't exist yet or is empty
+            pass
 
     def add_images(self, image_dir='.'):
         """Minimal batch adding, ignore non-images, all exceptions"""
@@ -482,13 +494,13 @@ def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_
                     fields=['path', 'signature'],
                     size=max_in_cursor)
 
-    # if the cursor has many matches, then it's probably not a huge help. Get the next one.
-    if res['hits']['total'] > max_in_cursor:
+    # if the cursor has many matches or is empty, then it's probably not a huge help. Get the next one.
+    if res['hits']['total'] > max_in_cursor or res['hits']['total'] == 0:
         result_q.put('STOP')
         return
 
     # make a signature array, n x len(sig)
-    signature_target_array = np.array([item['_source']['signature'] for item in res['hits']['hits']], dtype='int8')
+    signature_target_array = np.array([item['fields']['signature'] for item in res['hits']['hits']], dtype='int8')
 
     # make the target array, len(sig)
     signature_vec = np.array(signature, dtype='int8')
@@ -501,7 +513,7 @@ def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_
         if dist < cutoff:
             id_str = res['hits']['hits'][i]['_id']
             matches[id_str] = {'dist': dist,
-                               'path': res['hits']['hits'][i]['_source']['path'],
+                               'path': res['hits']['hits'][i]['fields']['path'],
                                'id': id_str}
             result_q.put(matches)
     result_q.put('STOP')
