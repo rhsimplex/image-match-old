@@ -23,7 +23,7 @@ COLLECTION_MAP = {
     'photos': 'eyeem_market',
     'eyeem': 'eyeem_market',
     'direct2artist': 'direct2artist',
-    'eyeem_global': 'crawl_images'
+    'global': 'crawl_images'
 }
 
 try:

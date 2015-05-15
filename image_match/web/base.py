@@ -33,6 +33,12 @@ class SimilaritySearchHandler(RequestHandler):
     def prepare(self):
         self.image_url = self.get_argument('image_url', None)
 
+    def normalize_results(self, d):
+        for r in d:
+            if 'path' not in r:
+                r['path'] = r['_id']
+
+
     @tornado.web.asynchronous
     def get(self, market):
         if market.endswith('/'):
@@ -63,13 +69,13 @@ class SimilaritySearchHandler(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureCollection(self.collection, distance_cutoff=0.5)
+            sc = SignatureCollection(self.collection, distance_cutoff=0.8)
             start_time = time.time()
 
             d = sc.similarity_search(f.name,
                                      process_timeout=1,
                                      maximum_matches_per_word=100)
-
+            self.normalize_results(d)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,
                                  time.time() - start_time)
