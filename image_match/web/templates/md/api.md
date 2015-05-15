@@ -1,16 +1,16 @@
 # {{market}} Similarity Search API
 
 ##Introduction
-Match images from the web against images in the {{market}} marketplace.  Try it in the browser at [labs.ascribe.io/{{market}}](http://labs.ascribe.io/{{market}}/).
+Match images from the web against images in the {{market}} marketplace.  Try it in the browser at [labs.ascribe.io{{BASE_URL}}/{{market}}](http://labs.ascribe.io{{BASE_URL}}/{{market}}/).
 
 
 ## Basics
 ***
-The base URL is `http://labs.ascribe.io/{{market}}/search/`
+The base URL is `http://labs.ascribe.io{{BASE_URL}}/{{market}}/search/`
 
 A request using curl looks like:
 
-`$ curl http://labs.ascribe.io/{{market}}/api/search/?image_url=http%3A%2F%2Fcdn...com%2Fthumb%2F640%2F480%2....jpg`
+`$ curl http://labs.ascribe.io{{BASE_URL}}/{{market}}/api/search/?image_url=http%3A%2F%2Fcdn...com%2Fthumb%2F640%2F480%2....jpg`
 
 The ```dist``` field indicates how closely matched the images are. A perfect match has a ```dist``` value of ```0.0```.
 
@@ -84,7 +84,7 @@ Features on the roadmap:
 
 
 ## GET /search
-`http://labs.ascribe.io/{{market}}/api/search/?image_url=<image_url>`
+`http://labs.ascribe.io{{BASE_URL}}/{{market}}/api/search/?image_url=<image_url>`
 
 `?image_url=<image_url>` should be encoded.
 
@@ -93,6 +93,4 @@ Retrieves matches to image found at the supplied URL
 
 ### Response
 200 and an array of ```{dist, path, id}``` image descriptions. In case of error, the returned JSON will contain the key ``error``
-
-
 

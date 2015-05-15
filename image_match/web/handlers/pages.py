@@ -39,5 +39,6 @@ class Documentation(RequestHandler):
         template = tornado.web.template.Template(markdown.markdown(content))
 
         self.render('documentation.html',
-                    raw_html=template.generate(market=market),
+                    raw_html=template.generate(market=market,
+                                               BASE_URL=settings.BASE_URL),
                     market=market)
