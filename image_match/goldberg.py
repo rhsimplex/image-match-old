@@ -1,5 +1,7 @@
 from skimage.color import rgb2gray
 from skimage.io import imread
+from PIL import Image
+from cStringIO import StringIO
 import numpy as np
 
 
@@ -81,19 +83,20 @@ class ImageSignature(object):
         'n_levels should be > 0 (%r given)' % n_levels
         self.n_levels = n_levels
 
-    def generate_signature(self, path_or_image):
+    def generate_signature(self, path_or_image, bytestream=False):
         """Generates an image signature.
 
         See section 3 of Goldberg, et al.
 
         Keyword arguments:
         path_or_image -- image path, or image array
+        bytestream -- will the image be passed as raw bytes? default: False
 
         Returns a signature array
         """
 
         # Step 1:    Load image as array of grey-levels
-        im_array = self.preprocess_image(path_or_image)
+        im_array = self.preprocess_image(path_or_image, bytestream=bytestream)
         
         # Step 2a:   Determine cropping boundaries
         if self.crop_percentiles is not None:
@@ -190,7 +193,7 @@ class ImageSignature(object):
         )
 
     @staticmethod
-    def preprocess_image(image_or_path):
+    def preprocess_image(image_or_path, bytestream=False):
         """Loads an image and converts to greyscale.
 
         Corresponds to 'step 1' in Goldberg's paper
@@ -198,7 +201,11 @@ class ImageSignature(object):
         Keyword arguments:
         image_or_path -- path to image, or image array
         """
-        if type(image_or_path) is unicode:
+        if bytestream:
+            img = Image.open(StringIO(image_or_path))
+            img = img.convert('RGB')
+            return rgb2gray(np.asarray(img, dtype=np.uint8))
+        elif type(image_or_path) is unicode:
             return imread(image_or_path, as_grey=True)
         elif type(image_or_path) is str:
             return imread(image_or_path, as_grey=True)
