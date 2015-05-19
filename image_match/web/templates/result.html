@@ -10,7 +10,7 @@
             Matches for image
         </h1>
         <p class="col-sm-12">
-            <img class="img-responsive center-block" src="{{ image_url }}" />
+            <img class="img-responsive center-block" src="{{quote(image_url)}}" />
         </p>
     </div>
 
@@ -21,7 +21,7 @@
     <div class="row matches">
         {% for r in result %}
         <div class="col-sm-4">
-            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{r['path']}})"></div>
+            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{quote(r['path'])}})"></div>
             <div class="actions text-center">
 
                 {% if r['dist'] == 0 %}
@@ -31,7 +31,7 @@
                 {% end %}
 
                 <a class="btn btn-default btn-xs"
-                    href="{{BASE_URL}}/?image_url={{escape(r['path'])}}">
+                    href="{{BASE_URL}}/{{market}}/?image_url={{escape(r['path'])}}">
                     <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
                     similar
                 </a>
@@ -39,6 +39,11 @@
         </div>
         {% end %}
     </div>
+
+    <p class="row">
+        <p>Go to the <a class="btn btn-default btn-xs" href="{{BASE_URL}}/{{market}}/api/search/?image_url={{escape(image_url)}}">JSON endpoint</a> or try to run this query with curl:</p>
+        <pre>curl http://labs.ascribe.io/similarity/{{market}}/api/search/?image_url={{escape(image_url)}}</pre>
+    </p>
 
     <div class="row">
         <p class="text-center">Image download time {{round(request_time)}}s; Lookup time {{round(lookup_time)}}s</p>

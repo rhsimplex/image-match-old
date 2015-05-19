@@ -13,6 +13,7 @@
 
         <!-- Custom styles for this template -->
         <link href="{{BASE_URL}}/static/css/cover.css" rel="stylesheet">
+        <link href="{{BASE_URL}}/static/css/ribbon.css" rel="stylesheet">
 
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -26,15 +27,16 @@
     </head>
 
     <body>
+        <div class="corner-ribbon top-left sticky red shadow">API Preview</div>
         <div class="cover-container container-fluid">
             <div class="masthead clearfix">
                 <div class="inner">
-                    <h3 class="masthead-brand"><a href="{{BASE_URL}}/">Image Match Preview</a></h3>
+                    <h3 class="masthead-brand"><a href="{{BASE_URL}}/{{market}}">Image Match Preview</a></h3>
                     <nav>
                         <ul class="nav masthead-nav">
-                            <li><a href="{{BASE_URL}}/">Search</a></li>
-                            <li><a href="{{BASE_URL}}/docs/api">API Documentation</a></li>
-                            <li><a href="{{BASE_URL}}/docs/contact">Contact</a></li>
+                            <li><a href="{{BASE_URL}}/{{market}}">Search</a></li>
+                            <li><a href="{{BASE_URL}}/{{market}}/docs/api">API Documentation</a></li>
+                            <li><a href="{{BASE_URL}}/{{market}}/docs/contact">Contact</a></li>
                         </ul>
                     </nav>
                 </div>
