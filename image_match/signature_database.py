@@ -247,8 +247,14 @@ class SignatureES(object):
             # yield a set of results
             yield l
 
-    def similarity_search(self, path, n_parallel_words=None, word_limit=None, all_results=True, all_orientations=False,
-                          process_timeout=1, maximum_matches_per_word=1000):
+    def similarity_search(self, path,
+                          bytestream=False,
+                          n_parallel_words=1,
+                          word_limit=10,
+                          all_results=True,
+                          all_orientations=False,
+                          process_timeout=1,
+                          maximum_matches_per_word=1000):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
@@ -305,9 +311,6 @@ class SignatureES(object):
         else:
             # otherwise just use the identity transformation
             orientations = [[lambda x: x]]
-
-        # initialize a list to hold borderline cases
-        borderline_cases = list()
 
         # try for every possible combination of transformations; if all_orientations=False,
         # this will only take one iteration
@@ -468,7 +471,7 @@ def normalized_distance(target_array, vec):
         / (np.linalg.norm(vec, axis=0) + np.linalg.norm(target_array, axis=1))
 
 
-def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_in_cursor=100):
+def get_next_matches(result_q, word, es, index_name, signature, cutoff=0.5, max_in_cursor=100, timeout=None):
     """Scans an index for word matches below a distance threshold.
 
     Note that placing this function outside the SignatureCollection
