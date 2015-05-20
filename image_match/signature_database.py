@@ -254,14 +254,10 @@ class SignatureES(object):
                           all_results=True,
                           all_orientations=False,
                           process_timeout=1,
-                          maximum_matches_per_word=1000):
+                          maximum_matches_per_word=100):
         """Performs similarity search on image
 
         Essentially a wrapper for parallel_find.
-
-        Returns a dict with the result:
-        {"verdict": pass|fail|pending,
-        "reason": dict of definite or possible matches}
 
         path -- path or url to image
         n_parallel_words -- number of parallel processes to use (default CPU count)
@@ -272,9 +268,8 @@ class SignatureES(object):
         process_timeout -- how long to wait before joining a thread automatically, in seconds (default 1)
         maximum_matches -- ignore columns with maximum_matches or more (default 1000)
         """
-        raise NotImplementedError
         # get initial image
-        img = self.gis.preprocess_image(path)
+        img = self.gis.preprocess_image(path, bytestream=bytestream)
 
         if n_parallel_words is None:
             n_parallel_words = cpu_count()
@@ -283,15 +278,6 @@ class SignatureES(object):
             word_limit = 2 * cpu_count()
             if word_limit < self.N**0.5:
                 word_limit = int(round(self.N**0.5))
-
-        if all_results:
-            l = reduce(lambda a, b: a + b, list(self.parallel_find(path,
-                                                                      n_parallel_words=n_parallel_words,
-                                                                      word_limit=word_limit,
-                                                                      process_timeout=process_timeout,
-                                                                      maximum_matches=maximum_matches_per_word)))
-            l = sorted(l, key=itemgetter('dist'))
-            return l
 
         if all_orientations:
             # initialize an iterator of composed transformations
@@ -310,43 +296,28 @@ class SignatureES(object):
 
         else:
             # otherwise just use the identity transformation
-            orientations = [[lambda x: x]]
+            orientations = [lambda x: x]
 
         # try for every possible combination of transformations; if all_orientations=False,
         # this will only take one iteration
-        for transforms in orientations:
+        result = []
+
+        orientations = np.unique(np.ravel(list(orientations)))
+        for transform in orientations:
             # compose all functions and apply on signature, in a woefully inelegant way
-            transformed_img = img
-            for transform in transforms:
-                transformed_img = transform(transformed_img)
+            transformed_img = transform(img)
 
             # generate the signature
             transformed_signature = self.gis.generate_signature(transformed_img)
 
-            # initialize the iterator
-            s = self.parallel_find(transformed_signature, n_parallel_words=n_parallel_words, word_limit=word_limit)
-
-            while True:
-                try:
-                    result = s.next()
-                    # investigate if any results are returned
-                    if result:
-                        for entry in result:
-                            # if the result is closer than the definite cutoff, return immediately
-                            if entry['dist'] < self.definite_match_cutoff:
-                                return {'verdict': 'fail', 'reason': [entry]}
-                            elif entry['dist'] < self.distance_cutoff:
-                                borderline_cases.append(entry)
-
-                except StopIteration:
-                    # iterator is exhausted, no matches found. Break out and try next orientation, if possible
-                    break
-
-        # return pass if borderline_cases is empty, otherwise pending
-        if borderline_cases:
-            return {'verdict': 'pending', 'reason': borderline_cases}
-        else:
-            return {'verdict': 'pass', 'reason': []}
+            l = reduce(lambda a, b: a + b, list(self.parallel_find(transformed_signature,
+                                                  n_parallel_words=n_parallel_words,
+                                                  word_limit=word_limit,
+                                                  process_timeout=process_timeout,
+                                                  maximum_matches=maximum_matches_per_word)))
+            l = sorted(l, key=itemgetter('dist'))
+            result.extend(l)
+        return np.unique(result).tolist()
 
 
 def make_record(path, gis, k, N, img=None, integer_encoding=True, path_as_id=False):
