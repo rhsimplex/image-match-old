@@ -4,11 +4,6 @@ from PIL import Image
 from cStringIO import StringIO
 import numpy as np
 
-
-class ImageTooSmallError(Exception):
-    pass
-
-
 class ImageSignature(object):
     """Image signature generator.
 
