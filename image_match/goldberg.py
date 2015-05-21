@@ -248,11 +248,11 @@ class ImageSignature(object):
         avg_grey = np.zeros((x_coords.shape[0], y_coords.shape[0]))
         
         for i, x in enumerate(x_coords):        # not the fastest implementation
-            lower_x_lim = x - P/2
-            upper_x_lim = lower_x_lim + P
+            lower_x_lim = max([x - P/2, 0])
+            upper_x_lim = min([lower_x_lim + P, image.shape[0]])
             for j, y in enumerate(y_coords):
-                lower_y_lim = y - P/2
-                upper_y_lim = lower_y_lim + P
+                lower_y_lim = max([y - P/2, 0])
+                upper_y_lim = min([lower_y_lim + P, image.shape[1]])
                 
                 avg_grey[i, j] = np.mean(image[lower_x_lim:upper_x_lim,
                                         lower_y_lim:upper_y_lim])  # no smoothing here as in the paper
