@@ -1,6 +1,8 @@
 from skimage.color import rgb2gray
 from skimage.io import imread
 from PIL import Image
+from cairosvg import svg2png
+import imghdr
 from cStringIO import StringIO
 import numpy as np
 
@@ -137,7 +139,11 @@ class ImageSignature(object):
         image_or_path -- path to image, or image array
         """
         if bytestream:
-            img = Image.open(StringIO(image_or_path))
+            try:
+                img = Image.open(StringIO(image_or_path))
+            except IOError:
+                #  could be an svg, attempt to convert
+                img = Image.open(StringIO(svg2png(image_or_path)))
             img = img.convert('RGB')
             return rgb2gray(np.asarray(img, dtype=np.uint8))
         elif type(image_or_path) is unicode:
