@@ -69,6 +69,7 @@ class ImageSignature(object):
         
         assert type(diagonal_neighbors) is bool, 'diagonal_neighbors should be boolean'
         self.diagonal_neighbors = diagonal_neighbors
+        self.sig_length = self.n ** 2 * (4 + self.diagonal_neighbors * 4)
 
         assert type(fix_ratio) is bool, 'fix_ratio should be boolean'
         self.fix_ratio = fix_ratio
