@@ -4,6 +4,7 @@ import csv
 from itertools import product
 from multiprocessing import cpu_count, Pool
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 from elasticsearch.exceptions import NotFoundError
 from operator import itemgetter
 from datetime import datetime
@@ -141,7 +142,7 @@ class SignatureES(object):
                             '_id': url,
                             '_source': result
                         }
-                _, errs = (self.es, results)
+                _, errs = bulk(self.es, results)
 
         else:
             for path in listdir(image_dir):
