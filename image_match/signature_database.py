@@ -133,16 +133,19 @@ class SignatureES(object):
                             end_reached = True
 
                     results = pool.map(partial_mr, local_paths)
+                    to_insert = []
                     timestamp = datetime.now()
-                    for result in results:
+                    for i, result in enumerate(results):
+                        result['path'] = urls[i]
                         result['timestamp'] = timestamp
-                        result = {
-                            '_index': self.index,
-                            '_type': self.doc_type,
-                            '_id': url,
-                            '_source': result
-                        }
-                    _, errs = bulk(self.es, results)
+                        to_insert.append(
+                            {
+                                '_index': self.index,
+                                '_type': self.doc_type,
+                                '_id': ids[i],
+                                '_source': result
+                            })
+                    _, errs = bulk(self.es, to_insert)
 
         else:
             for path in listdir(image_dir):
