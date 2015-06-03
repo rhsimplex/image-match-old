@@ -1,13 +1,15 @@
 from goldberg import ImageSignature
 import numpy as np
+import csv
 from itertools import product
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Pool
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from operator import itemgetter
 from datetime import datetime
 from os import listdir
 from os.path import join
+from functools import partial
 
 class SignatureES(object):
     """Wrapper class for ElasticSearch object.
@@ -104,13 +106,49 @@ class SignatureES(object):
             # index doesn't exist yet or is empty
             pass
 
-    def add_images(self, image_dir='.'):
-        """Minimal batch adding, ignore non-images, all exceptions"""
-        for path in listdir(image_dir):
-            try:
-                self.add_image(join(image_dir, path))
-            except Exception as e:
-                pass
+    def add_images(self, image_dir='.', ids_file=None, bulk_num=500, n_processes=4):
+        """Minimal batch adding, ignore non-images, all exceptions
+
+        @:param image_dir path to directory holding images
+        @:param ids_file unique ids associated with file names with rows formatted [id], ["local_path"], ["url"]
+        """
+        if ids_file:
+            partial_mr = partial(make_record, gis=self.gis, k=self.k, N=self.N)
+            with open(ids_file, 'rb') as csvfile:
+                recordreader = csv.reader(csvfile, quotechar='"')
+                pool = Pool(n_processes)
+                end_reached = False
+                while not end_reached:
+                    ids = []
+                    urls = []
+                    local_paths = []
+                    for i in range(bulk_num):
+                        try:
+                            _id, local_path, url = recordreader.next()
+                            ids.append(_id)
+                            urls.append(url)
+                            local_paths.append(local_path)
+                        except StopIteration:
+                            end_reached = True
+
+                    results = pool.map(partial_mr, local_path)
+                    timestamp = datetime.now()
+                    for result in results:
+                        result['timestamp'] = timestamp
+                        result = {
+                            '_index': self.image_index_name,
+                            '_type': self._image_doc_type,
+                            '_id': url,
+                            '_source': result
+                        }
+                _, errs = (self.es, results)
+
+        else:
+            for path in listdir(image_dir):
+                try:
+                    self.add_image(join(image_dir, path))
+                except Exception as e:
+                    pass
 
     def add_image(self, path, img=None, path_as_id=False):
         rec = make_record(path, self.gis, self.k, self.N, img,
