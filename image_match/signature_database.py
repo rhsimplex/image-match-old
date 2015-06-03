@@ -142,7 +142,7 @@ class SignatureES(object):
                             '_id': url,
                             '_source': result
                         }
-                _, errs = bulk(self.es, results)
+                    _, errs = bulk(self.es, results)
 
         else:
             for path in listdir(image_dir):
