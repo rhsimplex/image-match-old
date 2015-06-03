@@ -136,8 +136,8 @@ class SignatureES(object):
                     for result in results:
                         result['timestamp'] = timestamp
                         result = {
-                            '_index': self.image_index_name,
-                            '_type': self._image_doc_type,
+                            '_index': self.index,
+                            '_type': self.doc_type,
                             '_id': url,
                             '_source': result
                         }
