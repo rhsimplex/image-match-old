@@ -131,7 +131,7 @@ class SignatureES(object):
                         except StopIteration:
                             end_reached = True
 
-                    results = pool.map(partial_mr, local_path)
+                    results = pool.map(partial_mr, local_paths)
                     timestamp = datetime.now()
                     for result in results:
                         result['timestamp'] = timestamp
