@@ -1,6 +1,7 @@
 from skimage.color import rgb2gray
 from skimage.io import imread
 from PIL import Image
+from PIL.MpoImagePlugin import MpoImageFile
 from cairosvg import svg2png
 import imghdr
 from cStringIO import StringIO
@@ -85,6 +86,8 @@ class ImageSignature(object):
         'n_levels should be > 0 (%r given)' % n_levels
         self.n_levels = n_levels
 
+        self.handle_mpo = False
+
     def generate_signature(self, path_or_image, bytestream=False):
         """Generates an image signature.
 
@@ -98,7 +101,7 @@ class ImageSignature(object):
         """
 
         # Step 1:    Load image as array of grey-levels
-        im_array = self.preprocess_image(path_or_image, bytestream=bytestream)
+        im_array = self.preprocess_image(path_or_image, handle_mpo=self.handle_mpo, bytestream=bytestream)
         
         # Step 2a:   Determine cropping boundaries
         if self.crop_percentiles is not None:
@@ -131,7 +134,7 @@ class ImageSignature(object):
         return np.ravel(diff_mat).astype('int8')
 
     @staticmethod
-    def preprocess_image(image_or_path, bytestream=False):
+    def preprocess_image(image_or_path, bytestream=False, handle_mpo=False):
         """Loads an image and converts to greyscale.
 
         Corresponds to 'step 1' in Goldberg's paper
@@ -150,7 +153,15 @@ class ImageSignature(object):
         elif type(image_or_path) is unicode:
             return imread(image_or_path, as_grey=True)
         elif type(image_or_path) is str:
-            return imread(image_or_path, as_grey=True)
+            arr = imread(image_or_path, as_grey=True)
+            if handle_mpo:
+                # take the first images from the MPO
+                if arr.shape == (2,) and isinstance(arr[1].tolist(), MpoImageFile):
+                    return rgb2gray(arr[0])
+                else:
+                    return arr
+            else:
+                return arr
         elif type(image_or_path) is np.ndarray:
             return rgb2gray(image_or_path)
         else:
