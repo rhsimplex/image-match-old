@@ -5,7 +5,7 @@ from itertools import product
 from multiprocessing import cpu_count, Pool
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import NotFoundError, ConnectionTimeout
 from operator import itemgetter
 from datetime import datetime
 from os import listdir
@@ -150,7 +150,12 @@ class SignatureES(object):
                                 '_id': ids[i],
                                 '_source': result
                             })
-                    _, errs = bulk(self.es, to_insert)
+                    while True:
+                        try:
+                            _, errs = bulk(self.es, to_insert)
+                            break
+                        except ConnectionTimeout:
+                            continue
 
         else:
             for path in listdir(image_dir):
@@ -164,6 +169,23 @@ class SignatureES(object):
                           integer_encoding=self.integer_encoding, path_as_id=path_as_id)
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
+
+    def bool_query(self, path_or_signature):
+        # check if an array (signature) was passed. If so, generate the words here:
+        if type(path_or_signature) is np.ndarray:
+            record = dict()
+            words = words_to_int(get_words(path_or_signature, self.k, self.N))
+            max_contrast(words)
+            for i in range(self.N):
+                record[''.join(['simple_word_', str(i)])] = words[i].tolist()
+            record['signature'] = path_or_signature
+
+        # otherwise, generate the record in the usual way
+        else:
+            record = make_record(path_or_signature, self.gis, self.k, self.N)
+
+        query = {'bool': {}}
+
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=100):
