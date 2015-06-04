@@ -133,8 +133,11 @@ class SignatureES(object):
                             local_paths.append(local_path)
                         except StopIteration:
                             end_reached = True
-
-                    results = pool.map(partial_mr, local_paths)
+                    try:
+                        results = pool.map(partial_mr, local_paths)
+                    except IOError:
+                        # file is missing
+                        pass
                     to_insert = []
                     timestamp = datetime.now()
                     for i, result in enumerate(results):
