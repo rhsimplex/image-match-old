@@ -107,7 +107,7 @@ class SignatureES(object):
             # index doesn't exist yet or is empty
             pass
 
-    def add_images(self, image_dir='.', ids_file=None, bulk_num=500, n_processes=4):
+    def add_images(self, image_dir='.', ids_file=None, bulk_num=500, n_processes=4, offset=0):
         """Minimal batch adding, ignore non-images, all exceptions
 
         @:param image_dir path to directory holding images
@@ -119,6 +119,8 @@ class SignatureES(object):
                 recordreader = csv.reader(csvfile, quotechar='"')
                 pool = Pool(n_processes)
                 end_reached = False
+                for i in range(offset):
+                    recordreader.next()
                 while not end_reached:
                     ids = []
                     urls = []
