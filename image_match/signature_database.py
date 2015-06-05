@@ -166,17 +166,26 @@ class SignatureES(object):
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
     def bool_query(self, path_or_signature, size=10):
-        # check if an array (signature) was passed. If so, generate the words here:
+        """Uses boolean querying to select matches based on most words match. Does no signature comparison.
+
+        HIGHER SCORES ARE BETTER MATCHES!
+
+        :param path_or_signature: yo yo yo this is the path or signature of the image you wanna search y'all
+        :param size: max number of matches to return
+        :return: a list of match dicts, format [{id, path, score}, ...]
+        """
         record = make_record(path_or_signature, self.gis, self.k, self.N)
         path = record.pop('path')
         signature = record.pop('signature')
 
         # build the 'should' list
-        should = [{'term': word} for word in record]
-        return should
-
-
-
+        should = [{'term': {word: record[word]}} for word in record]
+        res = self.es.search(index=self.index,
+                              doc_type=self.doc_type,
+                              body={'query': {'bool':{'should':should}}},
+                              fields=['path'],
+                              size=size)['hits']['hits']
+        return [{'id': x['_id'], 'score': x['_score'], 'path': x['fields']['path'][0]} for x in res]
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=100):
