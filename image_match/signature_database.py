@@ -165,6 +165,19 @@ class SignatureES(object):
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
+    def bool_query(self, path_or_signature, size=10):
+        # check if an array (signature) was passed. If so, generate the words here:
+        record = make_record(path_or_signature, self.gis, self.k, self.N)
+        path = record.pop('path')
+        signature = record.pop('signature')
+
+        # build the 'should' list
+        should = [{'term': word} for word in record]
+        return should
+
+
+
+
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=100):
         """Makes an iterator to gets tne next match(es).
