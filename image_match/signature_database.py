@@ -140,7 +140,7 @@ class SignatureES(object):
                         pass
                     except Exception as e:
                         if ignore_all:
-                            pass
+                            continue
                         else:
                             raise e
 
