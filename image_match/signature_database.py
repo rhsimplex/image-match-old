@@ -165,7 +165,7 @@ class SignatureES(object):
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
-    def bool_query(self, path_or_signature, size=10):
+    def bool_query(self, path_or_signature, size=10, use_dist=True):
         """Uses boolean querying to select matches based on most words match. Does no signature comparison.
 
         HIGHER SCORES ARE BETTER MATCHES!
@@ -178,14 +178,31 @@ class SignatureES(object):
         path = record.pop('path')
         signature = record.pop('signature')
 
+        if use_dist:
+            fields=['path', 'signature']
+        else:
+            fields=['path']
+
         # build the 'should' list
         should = [{'term': {word: record[word]}} for word in record]
         res = self.es.search(index=self.index,
                               doc_type=self.doc_type,
                               body={'query': {'bool':{'should':should}}},
-                              fields=['path'],
+                              fields=fields,
                               size=size)['hits']['hits']
-        return [{'id': x['_id'], 'score': x['_score'], 'path': x['fields']['path'][0]} for x in res]
+
+        if use_dist:
+            sigs = np.array([x['fields']['signature'] for x in res], dtype='uint8')
+            dists = normalized_distance(sigs, np.array(signature, dtype='uint8'))
+
+        formatted_res = [{'id': x['_id'], 'score': x['_score'], 'path': x['fields']['path'][0]} for x in res]
+
+        if use_dist:
+            for i, row in enumerate(formatted_res):
+                row['dist'] = dists[i]
+            return filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
+
+        return formatted_res
 
     def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
                       process_timeout=None, maximum_matches=100):
