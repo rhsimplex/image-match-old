@@ -86,7 +86,7 @@ class ImageSignature(object):
         'n_levels should be > 0 (%r given)' % n_levels
         self.n_levels = n_levels
 
-        self.handle_mpo = False
+        self.handle_mpo = True
 
     def generate_signature(self, path_or_image, bytestream=False):
         """Generates an image signature.
