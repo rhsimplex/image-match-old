@@ -197,7 +197,9 @@ class SignatureES(object):
                     except NotFoundError:
                         print ', '.join(row)
             except Exception as e:
-                e.message = ' '.join([e.message, 'line reached: ', str(line_no)])
+                l = list(e.args)
+                l.append('Line reached: ' + str(line_no))
+                e.args = l
                 raise e
 
     def add_image(self, path, img=None, path_as_id=False):
