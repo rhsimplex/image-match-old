@@ -4,7 +4,7 @@ import csv
 from itertools import product
 from multiprocessing import cpu_count, Pool
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import bulk, BulkIndexError
 from elasticsearch.exceptions import NotFoundError, ConnectionTimeout
 from operator import itemgetter
 from datetime import datetime
@@ -160,7 +160,7 @@ class SignatureES(object):
                         try:
                             _, errs = bulk(self.es, to_insert)
                             break
-                        except ConnectionTimeout:
+                        except ConnectionTimeout, BulkIndexError:
                             continue
 
         else:
