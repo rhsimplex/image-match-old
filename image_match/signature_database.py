@@ -160,7 +160,7 @@ class SignatureES(object):
                         try:
                             _, errs = bulk(self.es, to_insert)
                             break
-                        except ConnectionTimeout, BulkIndexError:
+                        except (ConnectionTimeout, BulkIndexError):
                             continue
 
         else:
