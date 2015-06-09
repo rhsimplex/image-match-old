@@ -170,7 +170,7 @@ class SignatureES(object):
                 except Exception as e:
                     pass
 
-    def verify_database(self, ids_file, offset=0, ignore_timeout=True):
+    def verify_database(self, ids_file, offset=0, ignore_timeout=True, verbose=False):
         """Verify database ids from list
 
         @:param ids_file unique ids associated with file names with rows formatted where at least the first column is id
@@ -186,17 +186,21 @@ class SignatureES(object):
                         line_no += 1
                 for row in recordreader:
                     try:
-                        self.es.search_exists(index=self.index, doc_type=self.doc_type,
+                        res = self.es.search_exists(index=self.index, doc_type=self.doc_type,
                                               body={'query':
                                                         {'term':
                                                              {'_id': row[0]}
                                                         }
                                                    }
                                               )
+                        if verbose:
+                            print '{} {}'.format(row[0], res)
                     except NotFoundError:
                         print ', '.join(row)
                     finally:
                         line_no += 1
+                        if verbose:
+                            print line_no
 
             except Exception as e:
                 raise RuntimeError('Fail at line {} caused by {}'.format(line_no, str(type(e))))
