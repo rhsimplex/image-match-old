@@ -170,33 +170,36 @@ class SignatureES(object):
                 except Exception as e:
                     pass
 
-    def verify_database(self, ids_file, offset=None, ignore_timeout=True):
+    def verify_database(self, ids_file, offset=0, ignore_timeout=True):
         """Verify database ids from list
 
         @:param ids_file unique ids associated with file names with rows formatted where at least the first column is id
         :return: none, lines are printed to stdout
         """
+        line_no = 0
         with open(ids_file, 'rb') as csvfile:
-            recordreader = csv.reader(csvfile, quotechar='"')
-            if offset:
-                for i in range(offset):
-                    recordreader.next()
-            for row in recordreader:
-                try:
-                    self.es.search_exists(index=self.index, doc_type=self.doc_type,
-                                          body={'query':
-                                                    {'term':
-                                                         {'_id': row[0]}
-                                                    }
-                                               }
-                                          )
-                except NotFoundError:
-                    print ', '.join(row)
-                except ConnectionTimeout as e:
-                    if ignore_timeout:
-                        continue
-                    else:
-                        raise e
+            try:
+                recordreader = csv.reader(csvfile, quotechar='"')
+                if offset:
+                    for i in range(offset):
+                        recordreader.next()
+                        line_no += 1
+                for row in recordreader:
+                    try:
+                        self.es.search_exists(index=self.index, doc_type=self.doc_type,
+                                              body={'query':
+                                                        {'term':
+                                                             {'_id': row[0]}
+                                                        }
+                                                   }
+                                              )
+                    except NotFoundError:
+                        print ', '.join(row)
+                    finally:
+                        line_no += 1
+
+            except Exception as e:
+                raise RuntimeError('Fail at line {} caused by {}'.format(line_no, str(type(e))))
 
     def add_image(self, path, img=None, path_as_id=False):
         rec = make_record(path, self.gis, self.k, self.N, img,
