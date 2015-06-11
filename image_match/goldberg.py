@@ -153,15 +153,15 @@ class ImageSignature(object):
         elif type(image_or_path) is unicode:
             return imread(image_or_path, as_grey=True)
         elif type(image_or_path) is str:
-            arr = imread(image_or_path, as_grey=True)
+            arr = np.array(Image.open(image_or_path).convert('RGB'))
             if handle_mpo:
                 # take the first images from the MPO
                 if arr.shape == (2,) and isinstance(arr[1].tolist(), MpoImageFile):
                     return rgb2gray(arr[0])
                 else:
-                    return arr
+                    return rgb2gray(arr)
             else:
-                return arr
+                return rgb2gray(arr)
         elif type(image_or_path) is np.ndarray:
             return rgb2gray(image_or_path)
         else:
