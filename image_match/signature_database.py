@@ -135,9 +135,13 @@ class SignatureES(object):
                             end_reached = True
                     try:
                         results = pool.map(partial_mr, local_paths)
-                    except IOError:
+                    except IOError as e:
                         # file is missing
-                        continue
+                        if ignore_all:
+                            continue
+                        else:
+                            raise e
+                        
                     except Exception as e:
                         if ignore_all:
                             continue
