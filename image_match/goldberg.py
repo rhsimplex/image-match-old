@@ -154,10 +154,11 @@ class ImageSignature(object):
             return imread(image_or_path, as_grey=True)
         elif type(image_or_path) is str:
             try:
-                arr = np.array(Image.open(image_or_path).convert('RGB'))
+                img = Image.open(image_or_path)
+                arr = np.array(img.convert('RGB'))
             except IOError:
                 #  try again due to PIL weirdness
-                arr = np.array(Image.open(image_or_path).convert('RGB'))
+                arr = np.array(img.convert('RGB'))
             if handle_mpo:
                 # take the first images from the MPO
                 if arr.shape == (2,) and isinstance(arr[1].tolist(), MpoImageFile):
