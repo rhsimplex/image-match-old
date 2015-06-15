@@ -14,6 +14,8 @@ def quote(uri):
     return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
 
 
+SES_CACHE = {}
+
 class RequestHandler(tornado.web.RequestHandler):
 
     def get_template_namespace(self):
@@ -61,6 +63,11 @@ class SimilaritySearchHandler(RequestHandler):
         else:
             self.handle_empty_query(self.es_index)
 
+    def get_ses(self, index):
+        if index not in SES_CACHE:
+            SES_CACHE[index] = SignatureES(settings.ES, index=index, distance_cutoff=0.5)
+        return SES_CACHE[index]
+
     def handle_download(self, response):
         if response.error:
             self.handle_error(response.code)
@@ -69,15 +76,14 @@ class SimilaritySearchHandler(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureES(settings.ES, index=self.es_index, distance_cutoff=0.5)
+            sc = self.get_ses(self.es_index)
             start_time = time.time()
 
             # d = sc.similarity_search(f.name,
             #                          process_timeout=1,
             #                          maximum_matches_per_word=100)
-            d = sc.bool_query(f.name, size=100)
-
-            self.normalize_results(d)
+            d = sc.bool_query(f.name, size=20)
+            # self.normalize_results(d)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,
                                  time.time() - start_time)

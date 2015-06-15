@@ -93,7 +93,7 @@ class SignatureES(object):
         # Create ES index, if none exists
         self.index = index
         self.doc_type = doc_type
-        es.indices.create(index=self.index, ignore=400)
+        # es.indices.create(index=self.index, ignore=400)
 
         # Extract index fields, if any exist yet
         try:
