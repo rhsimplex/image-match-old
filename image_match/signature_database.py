@@ -165,7 +165,7 @@ class SignatureES(object):
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
-    def bool_query(self, path_or_signature, size=10, use_dist=True):
+    def bool_query(self, path_or_signature, size=10, use_dist=True, timeout=10):
         """Uses boolean querying to select matches based on most words match. Does no signature comparison.
 
         HIGHER SCORES ARE BETTER MATCHES!
@@ -189,13 +189,17 @@ class SignatureES(object):
                               doc_type=self.doc_type,
                               body={'query': {'bool':{'should':should}}},
                               fields=fields,
-                              size=size)['hits']['hits']
+                              size=size,
+                              timeout=timeout)['hits']['hits']
 
         if use_dist:
             sigs = np.array([x['fields']['signature'] for x in res], dtype='uint8')
             dists = normalized_distance(sigs, np.array(signature, dtype='uint8'))
 
-        formatted_res = [{'id': x['_id'], 'score': x['_score'], 'path': x['fields']['path'][0]} for x in res]
+        formatted_res = [{'id': x['_id'],
+                          'score': x['_score'],
+                          'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
+                         for x in res]
 
         if use_dist:
             for i, row in enumerate(formatted_res):
@@ -204,8 +208,8 @@ class SignatureES(object):
 
         return formatted_res
 
-    def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
-                      process_timeout=None, maximum_matches=100):
+    def parallel_find(self, path_or_signature, n_parallel_words=None,
+                      word_limit=None, verbose=False, maximum_matches=100):
         """Makes an iterator to gets tne next match(es).
 
         Multiprocess find
@@ -218,7 +222,7 @@ class SignatureES(object):
         maximum_matches -- ignore columns with maximum_matches or more (default 100)
         """
         if n_parallel_words is None:
-            n_parallel_words = cpu_count()
+            n_parallel_words = self.N
 
         if word_limit is None:
             word_limit = self.N
@@ -294,7 +298,7 @@ class SignatureES(object):
                 if len(response['hits']['hits']) < maximum_matches:
                     for hit in response['hits']['hits']:
                         signatures_array[index] = hit['fields']['signature']
-                        paths.append(hit['fields']['path'][0])
+                        paths.append(hit['fields'].get('path')[0] if hit['fields'].get('path') else hit['_id'])
                         ids.append(hit['_id'])
                         index += 1
 
