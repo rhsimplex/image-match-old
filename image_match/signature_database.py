@@ -195,7 +195,10 @@ class SignatureES(object):
             sigs = np.array([x['fields']['signature'] for x in res], dtype='uint8')
             dists = normalized_distance(sigs, np.array(signature, dtype='uint8'))
 
-        formatted_res = [{'id': x['_id'], 'score': x['_score'], 'path': x['fields']['path'][0]} for x in res]
+        formatted_res = [{'id': x['_id'],
+                          'score': x['_score'],
+                          'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
+                         for x in res]
 
         if use_dist:
             for i, row in enumerate(formatted_res):
@@ -294,7 +297,7 @@ class SignatureES(object):
                 if len(response['hits']['hits']) < maximum_matches:
                     for hit in response['hits']['hits']:
                         signatures_array[index] = hit['fields']['signature']
-                        paths.append(hit['fields']['path'][0])
+                        paths.append(hit['fields'].get('path')[0] if hit['fields'].get('path') else hit['_id'])
                         ids.append(hit['_id'])
                         index += 1
 
