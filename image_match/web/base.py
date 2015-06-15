@@ -65,7 +65,9 @@ class SimilaritySearchHandler(RequestHandler):
 
     def get_ses(self, index):
         if index not in SES_CACHE:
-            SES_CACHE[index] = SignatureES(settings.ES, index=index, distance_cutoff=0.5)
+            SES_CACHE[index] = SignatureES(settings.ES,
+                                           index=index,
+                                           distance_cutoff=0.5)
         return SES_CACHE[index]
 
     def handle_download(self, response):
@@ -82,7 +84,7 @@ class SimilaritySearchHandler(RequestHandler):
             # d = sc.similarity_search(f.name,
             #                          process_timeout=1,
             #                          maximum_matches_per_word=100)
-            d = sc.bool_query(f.name, size=20)
+            d = sc.bool_query(f.name, size=100)
             # self.normalize_results(d)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,

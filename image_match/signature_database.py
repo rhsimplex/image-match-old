@@ -201,11 +201,13 @@ class SignatureES(object):
                           'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
                          for x in res]
 
+
         if use_dist:
             for i, row in enumerate(formatted_res):
                 row['dist'] = dists[i]
-            return filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
+            formatted_res = filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
 
+        formatted_res = sorted(formatted_res, key=itemgetter('dist'))
         return formatted_res
 
     def parallel_find(self, path_or_signature, n_parallel_words=None,
