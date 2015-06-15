@@ -2,7 +2,7 @@ import tornado.web
 import tornado.escape
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from image_match.web import settings
-from image_match.signature_database import SignatureCollection
+from image_match.signature_database import SignatureES
 from tempfile import NamedTemporaryFile
 import urllib
 import os
@@ -47,7 +47,7 @@ class SimilaritySearchHandler(RequestHandler):
         self.market = market
 
         try:
-            self.collection = settings.DB[settings.COLLECTION_MAP[market]]
+            self.es_index = settings.INDEX_MAP[market]
         except KeyError:
             raise tornado.web.HTTPError(404)
 
@@ -59,7 +59,7 @@ class SimilaritySearchHandler(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         else:
-            self.handle_empty_query()
+            self.handle_empty_query(self.es_index)
 
     def handle_download(self, response):
         if response.error:
@@ -69,12 +69,14 @@ class SimilaritySearchHandler(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureCollection(self.collection, distance_cutoff=0.8)
+            sc = SignatureES(settings.ES, index=self.es_index, distance_cutoff=0.5)
             start_time = time.time()
 
-            d = sc.similarity_search(f.name,
-                                     process_timeout=1,
-                                     maximum_matches_per_word=100)
+            # d = sc.similarity_search(f.name,
+            #                          process_timeout=1,
+            #                          maximum_matches_per_word=100)
+            d = sc.bool_query(f.name, size=100)
+
             self.normalize_results(d)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,

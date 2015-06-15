@@ -1,2 +1,3 @@
 markdown
 cairosvg
+py-lru-cache
