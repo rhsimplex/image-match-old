@@ -213,7 +213,7 @@ class SignatureES(object):
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
-    def bool_query(self, path_or_signature, size=10, use_dist=True, timeout=10):
+    def bool_query(self, path_or_signature, size=10, use_dist=True, timeout=10, origin=None):
         """Uses boolean querying to select matches based on most words match. Does no signature comparison.
 
         HIGHER SCORES ARE BETTER MATCHES!
