@@ -220,6 +220,7 @@ class SignatureES(object):
 
         :param path_or_signature: yo yo yo this is the path or signature of the image you wanna search y'all
         :param size: max number of matches to return
+        :param origin: Name of origin (None for crawl, eyeem_market, etc.)
         :return: a list of match dicts, format [{id, path, score}, ...]
         """
         record = make_record(path_or_signature, self.gis, self.k, self.N)
@@ -231,11 +232,36 @@ class SignatureES(object):
         else:
             fields=['path']
 
+        if not origin:
+            filter_condition = {
+                                    'missing': {
+                                        'field': 'origin'
+                                    }
+                                }
+        else:
+            filter_condition = {
+                                    'bool': {
+                                        'must': {
+                                            'term': {
+                                                'origin': origin
+                                            }
+                                        }
+                                    }
+                                }
+
         # build the 'should' list
         should = [{'term': {word: record[word]}} for word in record]
         res = self.es.search(index=self.index,
                               doc_type=self.doc_type,
-                              body={'query': {'bool':{'should':should}}},
+                              body=
+                              {
+                                  'filtered': {
+                                      'query': {
+                                            'bool': {'should': should}
+                                      },
+                                      'filter': filter_condition
+                                  }
+                              },
                               fields=fields,
                               size=size,
                               timeout=timeout)['hits']['hits']
