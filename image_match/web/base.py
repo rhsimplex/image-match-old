@@ -14,7 +14,7 @@ def quote(uri):
     return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
 
 
-SES_CACHE = {}
+SIGNATURE_MATCH = SignatureES(settings.ES)
 
 
 class RequestHandler(tornado.web.RequestHandler):
@@ -36,21 +36,13 @@ class SimilaritySearchHandler(RequestHandler):
     def prepare(self):
         self.image_url = self.get_argument('image_url', None)
 
-    def normalize_results(self, d):
-        for r in d:
-            if 'path' not in r:
-                r['path'] = r['_id']
-
-
     @tornado.web.asynchronous
-    def get(self, market):
-        if market.endswith('/'):
-            market = market[:-1]
-
-        self.market = market
+    def get(self, origin):
+        if origin.endswith('/'):
+            origin = origin[:-1]
 
         try:
-            self.es_index = settings.INDEX_MAP[market]
+            self.origin = settings.ORIGIN_MAP[origin]
         except KeyError:
             raise tornado.web.HTTPError(404)
 
@@ -62,14 +54,7 @@ class SimilaritySearchHandler(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         else:
-            self.handle_empty_query(self.es_index)
-
-    def get_ses(self, index):
-        if index not in SES_CACHE:
-            SES_CACHE[index] = SignatureES(settings.ES,
-                                           index=index,
-                                           distance_cutoff=0.5)
-        return SES_CACHE[index]
+            self.handle_empty_query(self.origin)
 
     def handle_download(self, response):
         if response.error:
@@ -79,19 +64,13 @@ class SimilaritySearchHandler(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = self.get_ses(self.es_index)
             start_time = time.time()
-
-            # d = sc.similarity_search(f.name,
-            #                          process_timeout=1,
-            #                          maximum_matches_per_word=100)
-            d = sc.bool_query(f.name, size=100)
-            # self.normalize_results(d)
+            d = SIGNATURE_MATCH.bool_query(f.name, size=100, origin=self.origin)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,
                                  time.time() - start_time)
 
-    def handle_empty_query(self):
+    def handle_empty_query(self, origin):
         raise tornado.web.HTTPError(404)
 
     def handle_error(self, error):

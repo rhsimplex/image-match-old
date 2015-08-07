@@ -16,8 +16,8 @@ def scale(size):
 
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
-def get_count(index):
-    return scale(settings.ES.count(index)['count'])
+def get_count(origin):
+    return 10 # scale(settings.ES.count('images', body={'match': {'origin': origin}})['count'])
 
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
@@ -35,21 +35,23 @@ def get_samples(index):
 
 class Home(SimilaritySearchHandler):
 
-    def handle_empty_query(self, index):
-        samples = get_samples(index)
-        self.normalize_results(samples)
+    def handle_empty_query(self, origin):
+        # samples = get_samples(origin)
+        samples = []
+        # self.normalize_results(samples)
         self.render('home.html',
-                    market=self.market,
-                    total='{}'.format(get_count(index)),
+                    market=self.origin,
+                    total='{}'.format(get_count(origin)),
                     samples=samples)
 
     def handle_error(self, error):
-        self.render('error.html', error=error, market=self.market)
+        self.render('error.html', error=error, market=self.origin)
 
     def handle_response(self, result, request_time, lookup_time):
+        import pdb;pdb.set_trace()
         self.render('result.html',
                     result=result,
-                    market=self.market,
+                    market=self.origin,
                     image_url=self.image_url,
                     request_time=request_time,
                     lookup_time=lookup_time,
