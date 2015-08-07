@@ -8,27 +8,26 @@ from lru import lru_cache_function
 
 ORDERS = [(1e9, 'B'), (1e6, 'M'), (1e3, 'k')]
 
+
 def scale(size):
     for n, l in ORDERS:
         if size > n:
             return '{}{}'.format(int(size / n), l)
 
 
-@lru_cache_function(max_size=1024, expiration=60*60)
+@lru_cache_function(max_size=1024, expiration=60 * 60)
 def get_count(index):
     return scale(settings.ES.count(index)['count'])
 
 
-
-
-@lru_cache_function(max_size=1024, expiration=60*60)
+@lru_cache_function(max_size=1024, expiration=60 * 60)
 def get_samples(index):
     if index != 'eyeem_market':
         return []
 
     samples = settings.ES.mget(index='eyeem_market',
-                               body={'ids':[12, 3785, 3786, 4879, 13083,
-                                            226786, 272669, 426077, 560792]},
+                               body={'ids': [12, 3785, 3786, 4879, 13083,
+                                             226786, 272669, 426077, 560792]},
                                fields=['path', '_id'])['docs']
     samples = [{'path': s['fields']['path'][0]} for s in samples]
     return samples

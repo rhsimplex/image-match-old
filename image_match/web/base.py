@@ -16,6 +16,7 @@ def quote(uri):
 
 SES_CACHE = {}
 
+
 class RequestHandler(tornado.web.RequestHandler):
 
     def get_template_namespace(self):
