@@ -2,7 +2,7 @@ import tornado.web
 import tornado.escape
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from image_match.web import settings
-from image_match.signature_database import SignatureCollection
+from image_match.signature_database import SignatureES
 from tempfile import NamedTemporaryFile
 import urllib
 import os
@@ -12,6 +12,9 @@ import markdown
 
 def quote(uri):
     return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
+
+
+SES_CACHE = {}
 
 
 class RequestHandler(tornado.web.RequestHandler):
@@ -47,7 +50,7 @@ class SimilaritySearchHandler(RequestHandler):
         self.market = market
 
         try:
-            self.collection = settings.DB[settings.COLLECTION_MAP[market]]
+            self.es_index = settings.INDEX_MAP[market]
         except KeyError:
             raise tornado.web.HTTPError(404)
 
@@ -59,7 +62,14 @@ class SimilaritySearchHandler(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         else:
-            self.handle_empty_query()
+            self.handle_empty_query(self.es_index)
+
+    def get_ses(self, index):
+        if index not in SES_CACHE:
+            SES_CACHE[index] = SignatureES(settings.ES,
+                                           index=index,
+                                           distance_cutoff=0.5)
+        return SES_CACHE[index]
 
     def handle_download(self, response):
         if response.error:
@@ -69,13 +79,14 @@ class SimilaritySearchHandler(RequestHandler):
             f.write(response.body)
             f.close()
 
-            sc = SignatureCollection(self.collection, distance_cutoff=0.8)
+            sc = self.get_ses(self.es_index)
             start_time = time.time()
 
-            d = sc.similarity_search(f.name,
-                                     process_timeout=1,
-                                     maximum_matches_per_word=100)
-            self.normalize_results(d)
+            # d = sc.similarity_search(f.name,
+            #                          process_timeout=1,
+            #                          maximum_matches_per_word=100)
+            d = sc.bool_query(f.name, size=100)
+            # self.normalize_results(d)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,
                                  time.time() - start_time)

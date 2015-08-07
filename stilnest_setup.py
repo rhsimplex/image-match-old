@@ -1,4 +1,4 @@
-from image_match.signature_database import SignatureCollection
+from image_match.signature_database import SignatureES
 import sys
 import requests
 from hashlib import sha1
@@ -10,7 +10,7 @@ from numpy import mean
 
 # you will need blender 2.7x! see install instructions here:
 # https://launchpad.net/~irie/+archive/ubuntu/blender
-class StilnestCollection(SignatureCollection):
+class StilnestCollection(SignatureES):
     """
     Stilnest specific version of SignatureCollection -- implements lookup function that takes an .stl URL
 
@@ -114,12 +114,12 @@ def build_db(argv, n=9, cutoff=0.15, k=16, fix_ratio=True, crop_percentiles=(5, 
     """
 
     # get db and collection name if supplied
-    if len(argv) > 2:
-        db_name = argv[2]
-        collection_name = argv[3]
+    if len(argv) > 1:
+        hosts = argv[1]
+        index_name = argv[2]
     else:
-        db_name = 'stilnest'
-        collection_name = 'signatures'
+        index_name = 'stilnest'
+        hosts = ['localhost']
 
     # set up a directory walk from the command line path
     t = walk(argv[1])
@@ -132,11 +132,6 @@ def build_db(argv, n=9, cutoff=0.15, k=16, fix_ratio=True, crop_percentiles=(5, 
         if d[-1]:
             for x in d[-1]:
                 paths.append(join(d[0], x))
-
-    # access database
-    client = MongoClient()
-    db = client[db_name]
-    c = db[collection_name]
 
     # drop collection
     c.drop()

@@ -93,7 +93,7 @@ class SignatureES(object):
         # Create ES index, if none exists
         self.index = index
         self.doc_type = doc_type
-        es.indices.create(index=self.index, ignore=400)
+        # es.indices.create(index=self.index, ignore=400)
 
         # Extract index fields, if any exist yet
         try:
@@ -213,8 +213,53 @@ class SignatureES(object):
         rec['timestamp'] = datetime.now()
         self.es.index(index=self.index, doc_type=self.doc_type, body=rec)
 
-    def parallel_find(self, path_or_signature, n_parallel_words=None, word_limit=None, verbose=False,
-                      process_timeout=None, maximum_matches=100):
+    def bool_query(self, path_or_signature, size=10, use_dist=True, timeout=10):
+        """Uses boolean querying to select matches based on most words match. Does no signature comparison.
+
+        HIGHER SCORES ARE BETTER MATCHES!
+
+        :param path_or_signature: yo yo yo this is the path or signature of the image you wanna search y'all
+        :param size: max number of matches to return
+        :return: a list of match dicts, format [{id, path, score}, ...]
+        """
+        record = make_record(path_or_signature, self.gis, self.k, self.N)
+        path = record.pop('path')
+        signature = record.pop('signature')
+
+        if use_dist:
+            fields=['path', 'signature']
+        else:
+            fields=['path']
+
+        # build the 'should' list
+        should = [{'term': {word: record[word]}} for word in record]
+        res = self.es.search(index=self.index,
+                              doc_type=self.doc_type,
+                              body={'query': {'bool':{'should':should}}},
+                              fields=fields,
+                              size=size,
+                              timeout=timeout)['hits']['hits']
+
+        if use_dist:
+            sigs = np.array([x['fields']['signature'] for x in res], dtype='uint8')
+            dists = normalized_distance(sigs, np.array(signature, dtype='uint8'))
+
+        formatted_res = [{'id': x['_id'],
+                          'score': x['_score'],
+                          'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
+                         for x in res]
+
+
+        if use_dist:
+            for i, row in enumerate(formatted_res):
+                row['dist'] = dists[i]
+            formatted_res = filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
+
+        formatted_res = sorted(formatted_res, key=itemgetter('dist'))
+        return formatted_res
+
+    def parallel_find(self, path_or_signature, n_parallel_words=None,
+                      word_limit=None, verbose=False, maximum_matches=100):
         """Makes an iterator to gets tne next match(es).
 
         Multiprocess find
@@ -227,7 +272,7 @@ class SignatureES(object):
         maximum_matches -- ignore columns with maximum_matches or more (default 100)
         """
         if n_parallel_words is None:
-            n_parallel_words = cpu_count()
+            n_parallel_words = self.N
 
         if word_limit is None:
             word_limit = self.N
@@ -303,7 +348,7 @@ class SignatureES(object):
                 if len(response['hits']['hits']) < maximum_matches:
                     for hit in response['hits']['hits']:
                         signatures_array[index] = hit['fields']['signature']
-                        paths.append(hit['fields']['path'][0])
+                        paths.append(hit['fields'].get('path')[0] if hit['fields'].get('path') else hit['_id'])
                         ids.append(hit['_id'])
                         index += 1
 
