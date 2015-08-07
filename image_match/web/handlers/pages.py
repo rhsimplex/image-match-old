@@ -17,7 +17,7 @@ def scale(size):
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
 def get_count(origin):
-    return 10 # scale(settings.ES.count('images', body={'match': {'origin': origin}})['count'])
+    return 10  # scale(settings.ES.count('images', body={'match': {'origin': origin}})['count'])
 
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
@@ -48,7 +48,6 @@ class Home(SimilaritySearchHandler):
         self.render('error.html', error=error, market=self.origin)
 
     def handle_response(self, result, request_time, lookup_time):
-        import pdb;pdb.set_trace()
         self.render('result.html',
                     result=result,
                     market=self.origin,

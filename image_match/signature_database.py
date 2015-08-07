@@ -228,9 +228,9 @@ class SignatureES(object):
         signature = record.pop('signature')
 
         if use_dist:
-            fields=['path', 'signature']
+            fields=['url', 'signature']
         else:
-            fields=['path']
+            fields=['url']
 
         if not origin:
             filter_condition = {
@@ -253,7 +253,7 @@ class SignatureES(object):
         should = [{'term': {word: record[word]}} for word in record]
         res = self.es.search(index=self.index,
                               doc_type=self.doc_type,
-                              body=
+                              body={'query':
                               {
                                   'filtered': {
                                       'query': {
@@ -261,7 +261,7 @@ class SignatureES(object):
                                       },
                                       'filter': filter_condition
                                   }
-                              },
+                              }},
                               fields=fields,
                               size=size,
                               timeout=timeout)['hits']['hits']
@@ -272,7 +272,7 @@ class SignatureES(object):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
-                          'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
+                          'url': x['fields'].get('url')[0]}
                          for x in res]
 
 
