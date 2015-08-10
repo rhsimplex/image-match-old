@@ -456,7 +456,6 @@ class SignatureES(object):
             l = reduce(lambda a, b: a + b, list(self.parallel_find(transformed_signature,
                                                   n_parallel_words=n_parallel_words,
                                                   word_limit=word_limit,
-                                                  process_timeout=process_timeout,
                                                   maximum_matches=maximum_matches_per_word)))
             l = sorted(l, key=itemgetter('dist'))
             result.extend(l)
