@@ -41,10 +41,12 @@ class SimilaritySearchHandler(RequestHandler):
         if origin.endswith('/'):
             origin = origin[:-1]
 
-        try:
-            self.origin = settings.ORIGIN_MAP[origin]
-        except KeyError:
-            raise tornado.web.HTTPError(404)
+        self.origin = origin
+
+        # try:
+        #     self.origin = settings.ORIGIN_MAP[origin]
+        # except KeyError:
+        #     raise tornado.web.HTTPError(404)
 
         if self.image_url:
             http_client = AsyncHTTPClient()
@@ -65,7 +67,7 @@ class SimilaritySearchHandler(RequestHandler):
             f.close()
 
             start_time = time.time()
-            d = SIGNATURE_MATCH.bool_query(f.name, size=100, origin=self.origin)
+            d = SIGNATURE_MATCH.bool_query(f.name, size=9, origin=None if self.origin == 'global' else self.origin)
             os.unlink(f.name)
             self.handle_response(d, response.request_time,
                                  time.time() - start_time)

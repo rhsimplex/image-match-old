@@ -14,30 +14,47 @@ def scale(size):
         if size > n:
             return '{}{}'.format(int(size / n), l)
 
+def get_query(origin):
+    if origin == 'global':
+        filter_condition = {
+                'missing': {
+                    'field': 'origin'
+                }
+            }
+    else:
+        filter_condition = {
+                'bool': {
+                    'must': {
+                        'term': {
+                            'origin': origin
+                            }
+                        }
+                    }
+                }
+
+    return {'query': {'filtered': {'filter': filter_condition}}}
+
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
 def get_count(origin):
-    return 10  # scale(settings.ES.count('images', body={'match': {'origin': origin}})['count'])
+    query = get_query(origin)
+    return scale(settings.ES.count('images', body=query)['count'])
 
 
 @lru_cache_function(max_size=1024, expiration=60 * 60)
-def get_samples(index):
-    if index != 'eyeem_market':
-        return []
-
-    samples = settings.ES.mget(index='eyeem_market',
-                               body={'ids': [12, 3785, 3786, 4879, 13083,
-                                             226786, 272669, 426077, 560792]},
-                               fields=['path', '_id'])['docs']
-    samples = [{'path': s['fields']['path'][0]} for s in samples]
+def get_samples(origin):
+    query = get_query(origin)
+    samples = settings.ES.search(index='images',
+                                 body=query,
+                                 fields=['url', '_id'])['hits']['hits']
+    samples = [{'url': s['fields']['url'][0]} for s in samples]
     return samples
 
 
 class Home(SimilaritySearchHandler):
 
     def handle_empty_query(self, origin):
-        # samples = get_samples(origin)
-        samples = []
+        samples = get_samples(origin)
         # self.normalize_results(samples)
         self.render('home.html',
                     market=self.origin,

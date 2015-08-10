@@ -263,7 +263,7 @@ class SignatureES(object):
                                   }
                               }},
                               fields=fields,
-                              size=size,
+                              size=100,
                               timeout=timeout)['hits']['hits']
 
         if use_dist:
@@ -282,7 +282,7 @@ class SignatureES(object):
             formatted_res = filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
 
         formatted_res = sorted(formatted_res, key=itemgetter('dist'))
-        return formatted_res
+        return formatted_res[:size]
 
     def parallel_find(self, path_or_signature, n_parallel_words=None,
                       word_limit=None, verbose=False, maximum_matches=100):
