@@ -220,6 +220,7 @@ class SignatureES(object):
 
         :param path_or_signature: yo yo yo this is the path or signature of the image you wanna search y'all
         :param size: max number of matches to return
+        :param origin: Name of origin (None for crawl, eyeem_market, etc.)
         :return: a list of match dicts, format [{id, path, score}, ...]
         """
         record = make_record(path_or_signature, self.gis, self.k, self.N)
@@ -227,17 +228,42 @@ class SignatureES(object):
         signature = record.pop('signature')
 
         if use_dist:
-            fields=['path', 'signature']
+            fields=['url', 'signature']
         else:
-            fields=['path']
+            fields=['url']
+
+        if not origin:
+            filter_condition = {
+                                    'missing': {
+                                        'field': 'origin'
+                                    }
+                                }
+        else:
+            filter_condition = {
+                                    'bool': {
+                                        'must': {
+                                            'term': {
+                                                'origin': origin
+                                            }
+                                        }
+                                    }
+                                }
 
         # build the 'should' list
         should = [{'term': {word: record[word]}} for word in record]
         res = self.es.search(index=self.index,
                               doc_type=self.doc_type,
-                              body={'query': {'bool':{'should':should}}},
+                              body={'query':
+                              {
+                                  'filtered': {
+                                      'query': {
+                                            'bool': {'should': should}
+                                      },
+                                      'filter': filter_condition
+                                  }
+                              }},
                               fields=fields,
-                              size=size,
+                              size=100,
                               timeout=timeout)['hits']['hits']
 
         if use_dist:
@@ -246,7 +272,7 @@ class SignatureES(object):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
-                          'path': x['fields'].get('path')[0] if x['fields'].get('path') else x['_id']}
+                          'url': x['fields'].get('url')[0]}
                          for x in res]
 
 
@@ -256,7 +282,7 @@ class SignatureES(object):
             formatted_res = filter(lambda y: y['dist'] < self.distance_cutoff, formatted_res)
 
         formatted_res = sorted(formatted_res, key=itemgetter('dist'))
-        return formatted_res
+        return formatted_res[:size]
 
     def parallel_find(self, path_or_signature, n_parallel_words=None,
                       word_limit=None, verbose=False, maximum_matches=100):

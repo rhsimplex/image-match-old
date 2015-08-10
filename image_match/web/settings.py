@@ -3,10 +3,9 @@ from image_match.web import templates, static
 import elasticsearch
 
 
-ES = elasticsearch.Elasticsearch([
-        'ec2-52-28-2-108.eu-central-1.compute.amazonaws.com',
-        'ec2-52-28-126-90.eu-central-1.compute.amazonaws.com',
-        'ec2-52-28-126-97.eu-central-1.compute.amazonaws.com'])
+ES = elasticsearch.Elasticsearch(['ec2-52-28-2-108.eu-central-1.compute.amazonaws.com',
+                                  'ec2-52-28-126-90.eu-central-1.compute.amazonaws.com',
+                                  'ec2-52-28-126-97.eu-central-1.compute.amazonaws.com'])
 
 USER_AGENT = 'ascribe image crawl'
 CONNECT_TIMEOUT = 4
@@ -18,14 +17,14 @@ FAVICON_ICO = '/'.join([STATIC_PATH, 'favicon.ico'])
 
 BASE_URL = ''
 
-INDEX_MAP = {
-    'photos': 'eyeem_market',
-    'eyeem': 'eyeem_market',
-    'direct2artist': 'direct2artist',
-    'global': 'images'
+ORIGIN_MAP = {
+    'photos': 'eyeem.com',
+    'eyeem': 'eyeem.com',
+    'direct2artist': 'direct2artist.com',
+    'global': None
 }
 
 try:
-    from image_match.web.local_settings import *
+    from image_match.web.local_settings import *  # NOQA
 except ImportError:
     pass
