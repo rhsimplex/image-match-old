@@ -396,7 +396,6 @@ class SignatureES(object):
                           n_parallel_words=1,
                           word_limit=10,
                           all_orientations=False,
-                          process_timeout=1,
                           maximum_matches_per_word=100):
         """Performs similarity search on image
 
