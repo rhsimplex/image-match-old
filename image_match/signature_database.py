@@ -107,7 +107,7 @@ class SignatureES(object):
             # index doesn't exist yet or is empty
             pass
 
-    def add_images(self, image_dir='.', ids_file=None, bulk_num=500, n_processes=4, offset=0, ignore_all=True):
+    def add_images(self, image_dir='.', ids_file=None, bulk_num=500, n_processes=4, offset=0, ignore_all=True, origin=None):
         """Minimal batch adding, ignore non-images, all exceptions
 
         @:param image_dir path to directory holding images
@@ -153,6 +153,8 @@ class SignatureES(object):
                     for i, result in enumerate(results):
                         result['path'] = urls[i]
                         result['timestamp'] = timestamp
+                        if origin:
+                            result['origin'] = origin
                         to_insert.append(
                             {
                                 '_index': self.index,
