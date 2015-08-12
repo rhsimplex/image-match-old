@@ -7,8 +7,8 @@
     <p class="lead">
         <form class="row">
             <div class="form-group col-sm-8">
-                <label class="sr-only" for="exampleInputEmail3">URL</label>
-                <input type="text" name="image_url" class="form-control input-lg" placeholder="http://example.org/image.jpg">
+                <label class="sr-only">URL</label>
+                <input type="text" name="url" class="form-control input-lg" placeholder="http://example.org/image.jpg">
             </div>
 
             <button type="submit" class="btn btn-default btn-lg col-sm-4">Search</button>
@@ -22,7 +22,7 @@
     <div class="row matches">
         {% for s in samples %}
         <div class="col-sm-4">
-            <a class="" href="{{BASE_URL}}/{{market}}/?image_url={{escape(s['url'])}}">
+            <a class="" href="{{BASE_URL}}/{{market}}/?url={{escape(s['url'])}}">
                 <div class="match" style="background-image: url({{quote(s['url'])}})"></div>
             </a>
         </div>

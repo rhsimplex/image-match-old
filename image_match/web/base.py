@@ -34,7 +34,7 @@ class RequestHandler(tornado.web.RequestHandler):
 class SimilaritySearchHandler(RequestHandler):
 
     def prepare(self):
-        self.image_url = self.get_argument('image_url', None)
+        self.url = self.get_argument('url', None)
 
     @tornado.web.asynchronous
     def get(self, origin):
@@ -48,9 +48,9 @@ class SimilaritySearchHandler(RequestHandler):
         # except KeyError:
         #     raise tornado.web.HTTPError(404)
 
-        if self.image_url:
+        if self.url:
             http_client = AsyncHTTPClient()
-            request = HTTPRequest(self.image_url,
+            request = HTTPRequest(self.url,
                                   user_agent=settings.USER_AGENT,
                                   connect_timeout=settings.CONNECT_TIMEOUT,
                                   request_timeout=settings.REQUEST_TIMEOUT)
@@ -80,3 +80,7 @@ class SimilaritySearchHandler(RequestHandler):
 
     def handle_response(self, result, request_time, lookup_time):
         raise NotImplementedError
+
+
+class ThreeDimSimilaritySearchHandler(SimilaritySearchHandler):
+    pass

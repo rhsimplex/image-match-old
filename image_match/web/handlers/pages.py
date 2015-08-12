@@ -68,7 +68,7 @@ class Home(SimilaritySearchHandler):
         self.render('result.html',
                     result=result,
                     market=self.origin,
-                    image_url=self.image_url,
+                    url=self.url,
                     request_time=request_time,
                     lookup_time=lookup_time,
                     round=lambda x: round(x, 3))
