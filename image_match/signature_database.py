@@ -582,18 +582,10 @@ def normalized_distance(target_array, vec, nan_value=1.0):
     nan_value -- value to replace 0.0/0.0 = nan with (default is 1.0, to take
                  those featureless images out of contention)
     """
-
-    np.seterr(all='raise')
     topvec = np.linalg.norm(vec - target_array, axis=1)
     norm1 = np.linalg.norm(vec, axis=0)
     norm2 = np.linalg.norm(target_array, axis=1)
-
-    # use broadcasting
-    try:
-        finvec = topvec / (norm1 + norm2)
-    except FloatingPointError:
-        np.seterr(all='ignore')
-        finvec = topvec / (norm1 + norm2)
-        finvec[np.isnan(finvec)] = nan_value
+    finvec = topvec / (norm1 + norm2)
+    finvec[np.isnan(finvec)] = nan_value
 
     return finvec
