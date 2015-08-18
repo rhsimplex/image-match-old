@@ -3,12 +3,16 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
+        {% if market != 'stilnest_3dmatch' %}
         <h1 class="text-center">
             {% if not len(result['result']) %}
             No
             {% end %}
             Matches for image
         </h1>
+        {% else %}
+        <h1 class="text-center">Renderings of your model</h1>
+        {% end %}
         <p class="col-sm-12">
             {% if 'url' in result %}
             <img class="img-responsive center-block" src="{{quote(result['url'])}}"/>
@@ -22,9 +26,15 @@
         </p>
     </div>
 
+    <hr />
+
+    {% if market != 'stilnest_3dmatch' %}
     <p class="text-center">
         <em>Lower scores indicate better matches.</em>
     </p>
+    {% else %}
+    <h2 class="text-center">Similar models</h2>
+    {% end %}
 
     <div class="row matches">
         {% for r in result['result'] %}

@@ -5,7 +5,11 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        {% if market != 'stilnest_3dmatch' %}
         <title>Image Match Preview</title>
+        {% else %}
+        <title>STL Match Preview</title>
+        {% end %}
 
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
@@ -32,7 +36,13 @@
         <div class="cover-container container-fluid">
             <div class="masthead clearfix">
                 <div class="inner">
-                    <h3 class="masthead-brand"><a href="{{BASE_URL}}/{{market}}">Image Match Preview</a></h3>
+                    <h3 class="masthead-brand"><a href="{{BASE_URL}}/{{market}}">
+                        {% if market != 'stilnest_3dmatch' %}
+                        Image Match Preview
+                        {% else %}
+                        STL Match Preview
+                        {% end %}
+                    </a></h3>
                     <nav>
                         <ul class="nav masthead-nav">
                             <li><a href="{{BASE_URL}}/{{market}}">Search</a></li>
