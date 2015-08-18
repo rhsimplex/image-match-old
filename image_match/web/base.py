@@ -38,15 +38,7 @@ class SimilaritySearchHandler(RequestHandler):
 
     @tornado.web.asynchronous
     def get(self, origin):
-        if origin.endswith('/'):
-            origin = origin[:-1]
-
         self.origin = origin
-
-        # try:
-        #     self.origin = settings.ORIGIN_MAP[origin]
-        # except KeyError:
-        #     raise tornado.web.HTTPError(404)
 
         if self.url:
             http_client = AsyncHTTPClient()

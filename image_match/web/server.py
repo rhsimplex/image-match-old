@@ -25,7 +25,7 @@ application = tornado.web.Application([
 
     (r'/(.+)/api/search/?', api.Search),
 
-    (r'/(.+)/?', pages.Home),
+    (r'^/(.+?)/?$', pages.Home),
 ], debug=options.debug, template_path=settings.TEMPLATE_PATH)
 
 
