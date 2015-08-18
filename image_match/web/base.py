@@ -33,12 +33,15 @@ class SearchHandler(RequestHandler):
     def prepare(self):
         self.url = self.get_argument('url', None)
         try:
-            self.file = self.request.files['file'][0]['body']
+            self.file = self.request.files['file'][0]
         except (IndexError, KeyError):
             self.file = None
 
+        if self.url or self.file:
+            _, self.ext = os.path.splitext(self.url or self.file['filename'])
+
     def _search(self, filename, origin=None):
-        self.do_search(filename, origin=None if origin == 'global' else origin)
+        return self.do_search(filename, origin=None if origin == 'global' else origin)
 
     def do_search(self, filename, origin='global'):
         raise NotImplementedError
@@ -61,7 +64,7 @@ class SearchHandler(RequestHandler):
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
         elif self.file:
-            self.handle_search(self.file)
+            self.handle_search(self.file['body'])
         else:
             self.handle_empty_query(self.origin)
 
@@ -72,13 +75,13 @@ class SearchHandler(RequestHandler):
             self.handle_search(response.body, response.request_time)
 
     def handle_search(self, file_body, request_time=0):
-        f = NamedTemporaryFile(delete=False)
+        f = NamedTemporaryFile(suffix=self.ext, delete=False)
         f.write(file_body)
         f.close()
         start_time = time.time()
-        d = self._search(f.name, self.origin)
+        result = self._search(f.name, self.origin)
         os.unlink(f.name)
-        self.handle_response(d, request_time, time.time() - start_time)
+        self.handle_response(result, request_time, time.time() - start_time)
 
     def handle_empty_query(self, origin):
         raise tornado.web.HTTPError(404)
@@ -86,11 +89,11 @@ class SearchHandler(RequestHandler):
     def handle_error(self, error):
         raise NotImplementedError
 
-    def handle_response(self, result, request_time, lookup_time, url=None):
+    def handle_response(self, result, request_time, lookup_time):
         raise NotImplementedError
 
 
 class SimilaritySearchHandler(SearchHandler):
 
     def do_search(self, filename, origin='global'):
-        return search(filename, origin)
+        return search(filename, origin, url=self.url)

@@ -54,3 +54,4 @@ docs/_build/
 
 # PyBuilder
 target/
+image_match/web/static/tmp/

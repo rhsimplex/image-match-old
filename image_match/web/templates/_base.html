@@ -36,7 +36,9 @@
                     <nav>
                         <ul class="nav masthead-nav">
                             <li><a href="{{BASE_URL}}/{{market}}">Search</a></li>
+                            {% if market != 'stilnest_3dmatch' %}
                             <li><a href="{{BASE_URL}}/{{market}}/docs/api">API Documentation</a></li>
+                            {% end %}
                             <li><a href="{{BASE_URL}}/{{market}}/docs/contact">Contact</a></li>
                         </ul>
                     </nav>

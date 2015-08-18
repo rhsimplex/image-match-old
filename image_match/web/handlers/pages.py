@@ -59,17 +59,16 @@ class PageHandler(SimilaritySearchHandler):
     def handle_error(self, error):
         self.render('error.html', error=error, market=self.origin)
 
-    def handle_response(self, result, request_time, lookup_time, url=None):
+    def handle_response(self, result, request_time, lookup_time):
         self.render('result.html',
                     result=result,
                     market=self.origin,
-                    url=url,
                     request_time=request_time,
                     lookup_time=lookup_time,
                     round=lambda x: round(x, 3))
 
 
-class Home(SimilaritySearchHandler):
+class Home(PageHandler):
 
     def handle_empty_query(self, origin):
         samples = get_samples(origin)
@@ -78,7 +77,8 @@ class Home(SimilaritySearchHandler):
                     total='{}'.format(get_count(origin)),
                     samples=samples)
 
-class StilnestHome(SimilaritySearchHandler):
+
+class StilnestHome(PageHandler):
 
     def handle_empty_query(self, origin):
         self.render('stilnest.html', market=self.origin)
