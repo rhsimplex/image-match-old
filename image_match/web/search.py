@@ -29,7 +29,7 @@ def _three_d_search(filename, origin, url=None):
         match['url'] = template.format(match['url'])
 
     result = {
-        'urls': [os.path.join('/static', 'tmp', basename, img)
+        'urls': [os.path.join(settings.BASE_URL, 'static', 'tmp', basename, img)
                  for img in os.listdir(out_dir)],
         'result': matches
     }
