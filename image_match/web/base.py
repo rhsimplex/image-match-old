@@ -2,19 +2,16 @@ import tornado.web
 import tornado.escape
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from image_match.web import settings
-from image_match.signature_database import SignatureES
 from tempfile import NamedTemporaryFile
 import urllib
 import os
 import time
 import markdown
+from image_match.web.search import search
 
 
 def quote(uri):
     return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
-
-
-SIGNATURE_MATCH = SignatureES(settings.ES)
 
 
 class RequestHandler(tornado.web.RequestHandler):
@@ -31,13 +28,29 @@ class RequestHandler(tornado.web.RequestHandler):
         return ns
 
 
-class SimilaritySearchHandler(RequestHandler):
+class SearchHandler(RequestHandler):
 
     def prepare(self):
         self.url = self.get_argument('url', None)
+        try:
+            self.file = self.request.files['file'][0]['body']
+        except (IndexError, KeyError):
+            self.file = None
+
+    def _search(self, filename, origin=None):
+        self.do_search(filename, origin=None if origin == 'global' else origin)
+
+    def do_search(self, filename, origin='global'):
+        raise NotImplementedError
+
+    def get(self, origin):
+        self.process(origin)
+
+    def post(self, origin):
+        self.process(origin)
 
     @tornado.web.asynchronous
-    def get(self, origin):
+    def process(self, origin):
         self.origin = origin
 
         if self.url:
@@ -47,6 +60,8 @@ class SimilaritySearchHandler(RequestHandler):
                                   connect_timeout=settings.CONNECT_TIMEOUT,
                                   request_timeout=settings.REQUEST_TIMEOUT)
             http_client.fetch(request, self.handle_download)
+        elif self.file:
+            self.handle_search(self.file)
         else:
             self.handle_empty_query(self.origin)
 
@@ -54,15 +69,16 @@ class SimilaritySearchHandler(RequestHandler):
         if response.error:
             self.handle_error(response.code)
         else:
-            f = NamedTemporaryFile(delete=False)
-            f.write(response.body)
-            f.close()
+            self.handle_search(response.body, response.request_time)
 
-            start_time = time.time()
-            d = SIGNATURE_MATCH.bool_query(f.name, size=9, origin=None if self.origin == 'global' else self.origin)
-            os.unlink(f.name)
-            self.handle_response(d, response.request_time,
-                                 time.time() - start_time)
+    def handle_search(self, file_body, request_time=0):
+        f = NamedTemporaryFile(delete=False)
+        f.write(file_body)
+        f.close()
+        start_time = time.time()
+        d = self._search(f.name, self.origin)
+        os.unlink(f.name)
+        self.handle_response(d, request_time, time.time() - start_time)
 
     def handle_empty_query(self, origin):
         raise tornado.web.HTTPError(404)
@@ -70,9 +86,11 @@ class SimilaritySearchHandler(RequestHandler):
     def handle_error(self, error):
         raise NotImplementedError
 
-    def handle_response(self, result, request_time, lookup_time):
+    def handle_response(self, result, request_time, lookup_time, url=None):
         raise NotImplementedError
 
 
-class ThreeDimSimilaritySearchHandler(SimilaritySearchHandler):
-    pass
+class SimilaritySearchHandler(SearchHandler):
+
+    def do_search(self, filename, origin='global'):
+        return search(filename, origin)

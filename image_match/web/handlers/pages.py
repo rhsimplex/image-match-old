@@ -51,27 +51,37 @@ def get_samples(origin):
     return samples
 
 
+class PageHandler(SimilaritySearchHandler):
+
+    def handle_empty_query(self, origin):
+        raise NotImplementedError
+
+    def handle_error(self, error):
+        self.render('error.html', error=error, market=self.origin)
+
+    def handle_response(self, result, request_time, lookup_time, url=None):
+        self.render('result.html',
+                    result=result,
+                    market=self.origin,
+                    url=url,
+                    request_time=request_time,
+                    lookup_time=lookup_time,
+                    round=lambda x: round(x, 3))
+
+
 class Home(SimilaritySearchHandler):
 
     def handle_empty_query(self, origin):
         samples = get_samples(origin)
-        # self.normalize_results(samples)
         self.render('home.html',
                     market=self.origin,
                     total='{}'.format(get_count(origin)),
                     samples=samples)
 
-    def handle_error(self, error):
-        self.render('error.html', error=error, market=self.origin)
+class StilnestHome(SimilaritySearchHandler):
 
-    def handle_response(self, result, request_time, lookup_time):
-        self.render('result.html',
-                    result=result,
-                    market=self.origin,
-                    url=self.url,
-                    request_time=request_time,
-                    lookup_time=lookup_time,
-                    round=lambda x: round(x, 3))
+    def handle_empty_query(self, origin):
+        self.render('stilnest.html', market=self.origin)
 
 
 class Documentation(RequestHandler):
