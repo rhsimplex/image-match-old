@@ -10,5 +10,5 @@ class Search(SimilaritySearchHandler):
         self.finish()
 
     def handle_response(self, result, request_time, lookup_time):
-        self.write({'result': result})
+        self.write(result)
         self.finish()

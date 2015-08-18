@@ -230,9 +230,9 @@ class SignatureES(object):
         signature = record.pop('signature')
 
         if use_dist:
-            fields=['url', 'signature']
+            fields=['path', 'url', 'signature']
         else:
-            fields=['url']
+            fields=['path', 'url']
 
         if not origin:
             filter_condition = {
@@ -274,7 +274,7 @@ class SignatureES(object):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
-                          'url': x['fields'].get('url')[0]}
+                          'url': x['fields'].get('url', x['fields'].get('path'))[0]}
                          for x in res]
 
 

@@ -1,0 +1,19 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<div class="inner cover text-center">
+    <h1 class="cover-heading">Search 3D models</h1>
+
+    <p class="lead">
+        <form class="row" method="post" enctype="multipart/form-data">
+            <div class="form-group col-sm-8">
+                <label class="sr-only">File</label>
+                <input type="file" name="file" class="form-control input-lg" />
+            </div>
+
+            <button type="submit" class="btn btn-default btn-lg col-sm-4">Search</button>
+        </form>
+    </p>
+
+</div>
+{% end %}
