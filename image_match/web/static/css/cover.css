@@ -173,7 +173,7 @@ body {
 
 .matches .actions {
     position: absolute;
-    bottom: 5px;
+    top: 5px;
     right: 20px;
     left: 20px;
 }
