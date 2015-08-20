@@ -347,9 +347,10 @@ class SignatureES(object):
             )
 
         while True:
-            body = [{'index': self.index, 'type': self.doc_type}]
+            body = []
             try:
                 for i in range(n_parallel_words):
+                    body.append({'index': self.index, 'type': self.doc_type})
                     # noinspection PyTypeChecker
                     body.append({'query':
                                     {'term':
@@ -359,6 +360,7 @@ class SignatureES(object):
                                     'fields': ['signature', 'path']
                                 }
                                 )
+
             except IndexError:
                 raise StopIteration
 
