@@ -102,7 +102,7 @@ Retrieves matches to image found at the supplied URL.
 
 ### Response
 
-The body if the reponse is a `JSON` dictionary containing:
+The body of the reponse is a `JSON` dictionary containing:
 
 - **url**: the URL of the image to match
 - **results**: an array of matches containing:
