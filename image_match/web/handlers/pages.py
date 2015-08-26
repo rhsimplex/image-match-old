@@ -106,6 +106,7 @@ class TineyeHome(TineyeSearchHandler):
                     lookup_time=lookup_time,
                     round=lambda x: round(x, 3))
 
+
 class StilnestHome(PageHandler):
 
     def handle_empty_query(self, origin):

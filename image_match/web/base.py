@@ -11,7 +11,7 @@ from image_match.web.search import search
 
 
 def quote(uri):
-    return urllib.quote(uri, safe='~@#$&*!+=:;,.?/\'')
+    return urllib.quote(uri.encode('utf-8'), safe='~@#$&*!+=:;,.?/\'')
 
 
 class RequestHandler(tornado.web.RequestHandler):

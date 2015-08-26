@@ -29,8 +29,8 @@ def _tineye_image_search(filename, origin, url=None):
                                        settings.TINEYE_PRIVATE_KEY)
     try:
         r = tineye_api.search_url(url=url)
-    except TinEyeAPIError:
-        r = {'error': 'Please try again later'}
+    except TinEyeAPIError as e:
+        r = {'error': e.message}
     return r
 
 
