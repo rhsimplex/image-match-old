@@ -2,7 +2,11 @@
 
 {% block content %}
 <div class="inner cover text-center">
+    {% if total is not None %}
     <h1 class="cover-heading">Search over {{total}} images.</h1>
+    {% else %}
+    <h1 class="cover-heading">Search similar images.</h1>
+    {% end %}
 
     <p class="lead">
         <form class="row">
@@ -15,6 +19,7 @@
         </form> 
     </p>
 
+    {% if samples %}
     <div class="row">
         <h2 class="col-sm-12">Or try one of the images below</h2>
     </div>
@@ -28,6 +33,7 @@
         </div>
         {% end %}
     </div>
+    {% end %}
 
 </div>
 {% end %}

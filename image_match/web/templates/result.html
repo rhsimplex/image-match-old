@@ -5,7 +5,7 @@
     <div class="row">
         {% if market != 'stilnest_3dmatch' %}
         <h1 class="text-center">
-            {% if not len(result['result']) %}
+            {% if not len(result['results']) %}
             No
             {% end %}
             Matches for image
@@ -37,15 +37,21 @@
     {% end %}
 
     <div class="row matches">
-        {% for r in result['result'] %}
+        {% for r in result['results'] %}
         <div class="col-sm-4">
-            <div class="match{% if r['dist'] == 0 %} perfect{% end %}" style="background-image: url({{quote(r['url'])}})"></div>
+            <div class="match{% if r.get('dist') == 0 %} perfect{% end %}" style="background-image: url({{quote(r['url'])}})"></div>
             <div class="actions text-center">
 
+                {% if 'dist' in r %}
                 {% if r['dist'] == 0 %}
                 <span class="score label label-success">Perfect match!</span>
                 {% else %}
                 <span class="score label label-default">Score: {{round(r['dist'])}}</span>
+                {% end %}
+                {% end %}
+
+                {% if 'backlink' in r %}
+                <a class="btn btn-default btn-xs" href="{{r['backlink']}}" target="_blank">source</a>
                 {% end %}
 
                 {% if market != 'stilnest_3dmatch' %}

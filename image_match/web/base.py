@@ -40,10 +40,10 @@ class SearchHandler(RequestHandler):
         if self.url or self.file:
             _, self.ext = os.path.splitext(self.url or self.file['filename'])
 
-    def _search(self, filename, origin=None):
-        return self.do_search(filename, origin=None if origin == 'global' else origin)
+    def _search(self, filename, origin=None, use_tineye=False):
+        return self.do_search(filename, origin=None if origin == 'global' else origin, use_tineye=use_tineye)
 
-    def do_search(self, filename, origin='global'):
+    def do_search(self, filename, origin='global', use_tineye=False):
         raise NotImplementedError
 
     def get(self, origin):
@@ -95,5 +95,17 @@ class SearchHandler(RequestHandler):
 
 class SimilaritySearchHandler(SearchHandler):
 
-    def do_search(self, filename, origin='global'):
-        return search(filename, origin, url=self.url)
+    def do_search(self, filename, origin='global', use_tineye=False):
+        return search(filename, origin, url=self.url, use_tineye=use_tineye)
+
+
+class TineyeSearchHandler(SimilaritySearchHandler):
+    def process(self, origin):
+        self.origin = origin
+
+        if self.url:
+            start_time = time.time()
+            result = self._search(self.url, self.origin, use_tineye=True)
+            self.handle_response(result, 0, time.time() - start_time)
+        else:
+            self.handle_empty_query(self.origin)

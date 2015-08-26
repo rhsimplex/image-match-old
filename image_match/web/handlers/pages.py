@@ -1,6 +1,6 @@
 import os
 from image_match.web import settings
-from image_match.web.base import RequestHandler, SimilaritySearchHandler
+from image_match.web.base import RequestHandler, SimilaritySearchHandler, TineyeSearchHandler
 import tornado.web
 import markdown
 from lru import lru_cache_function
@@ -10,6 +10,8 @@ ORDERS = [(1e9, 'B'), (1e6, 'M'), (1e3, 'k')]
 
 
 def scale(size):
+    if not size:
+        return None
     for n, l in ORDERS:
         if size > n:
             return '{}{}'.format(int(size / n), l)
@@ -60,6 +62,9 @@ class PageHandler(SimilaritySearchHandler):
         self.render('error.html', error=error, market=self.origin)
 
     def handle_response(self, result, request_time, lookup_time):
+        if 'error' in result:
+            self.handle_error(result['error'])
+            return
         self.render('result.html',
                     result=result,
                     market=self.origin,
@@ -74,9 +79,32 @@ class Home(PageHandler):
         samples = get_samples(origin)
         self.render('home.html',
                     market=self.origin,
-                    total='{}'.format(get_count(origin)),
+                    total=get_count(origin),
                     samples=samples)
 
+class TineyeHome(TineyeSearchHandler):
+
+    def handle_empty_query(self, origin):
+        samples = get_samples(origin)
+        self.render('home.html',
+                    market=self.origin,
+                    total=get_count(origin),
+                    samples=samples)
+        raise NotImplementedError
+
+    def handle_error(self, error):
+        self.render('error.html', error=error, market=self.origin)
+
+    def handle_response(self, result, request_time, lookup_time):
+        if 'error' in result:
+            self.handle_error(result['error'])
+            return
+        self.render('result.html',
+                    result=result,
+                    market=self.origin,
+                    request_time=request_time,
+                    lookup_time=lookup_time,
+                    round=lambda x: round(x, 3))
 
 class StilnestHome(PageHandler):
 
@@ -87,6 +115,8 @@ class StilnestHome(PageHandler):
 class Documentation(RequestHandler):
 
     def get(self, market, name):
+        if name == 'api' and market == 'all':
+            name = 'tineye-api'
         path = os.path.join(settings.TEMPLATE_PATH, 'md', name + '.md')
         try:
             content = open(path).read()
