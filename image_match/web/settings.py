@@ -7,8 +7,6 @@ ES_ENDPOINTS = ['ec2-52-28-2-108.eu-central-1.compute.amazonaws.com',
                 'ec2-52-28-126-90.eu-central-1.compute.amazonaws.com',
                 'ec2-52-28-126-97.eu-central-1.compute.amazonaws.com']
 
-ES = elasticsearch.Elasticsearch(ES_ENDPOINTS)
-
 USER_AGENT = 'ascribe image crawl'
 CONNECT_TIMEOUT = 4
 REQUEST_TIMEOUT = 4
@@ -31,3 +29,5 @@ try:
     from image_match.web.local_settings import *  # NOQA
 except ImportError:
     pass
+
+ES = elasticsearch.Elasticsearch(ES_ENDPOINTS)
