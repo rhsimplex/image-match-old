@@ -3,7 +3,6 @@ from skimage.io import imread
 from PIL import Image
 from PIL.MpoImagePlugin import MpoImageFile
 from cairosvg import svg2png
-import imghdr
 from cStringIO import StringIO
 import numpy as np
 
