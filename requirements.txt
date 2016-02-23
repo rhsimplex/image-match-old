@@ -1,5 +1,2 @@
-markdown
+elasticsearch
 cairosvg
-py-lru-cache
--e git://github.com/TinEye/pytineye.git#egg=pytineye
-
