@@ -6,6 +6,7 @@ from cairosvg import svg2png
 from cStringIO import StringIO
 import numpy as np
 
+
 class ImageSignature(object):
     """Image signature generator.
 
@@ -332,7 +333,6 @@ class ImageSignature(object):
             lower_left_neighbors = -np.pad(upper_right_neighbors[1:, 1:],
                                            (0, 1), mode='constant')
 
-            
             return np.dstack(np.array([
                 upper_left_neighbors,
                 up_neighbors,

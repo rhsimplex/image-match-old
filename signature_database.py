@@ -12,6 +12,7 @@ from os import listdir
 from os.path import join
 from functools import partial
 
+
 class SignatureES(object):
     """Wrapper class for ElasticSearch object.
 
