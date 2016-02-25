@@ -70,6 +70,7 @@ gis.normalized_distance(a, c)
 Returns `0.68446275381507249`, almost certainly not a match.  image-match doesn't have to generate a signature from a URL; a file-path or even an in-memory bytestream will do (be sure to specify `bytestream=True' in the latter case).
 
 Now consider this subtly-modified version of the Mona Lisa:
+
 ![https://www.flickr.com/photos/planetrussell/6814444991](https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg)
 
 (credit: Michael Russell [Attribution-ShareAlike 2.0 Generic](https://creativecommons.org/licenses/by-sa/2.0/))
