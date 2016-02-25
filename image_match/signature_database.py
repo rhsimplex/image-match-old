@@ -1,16 +1,18 @@
-from goldberg import ImageSignature
-import numpy as np
 import csv
 from itertools import product
 from multiprocessing import cpu_count, Pool
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk, BulkIndexError
-from elasticsearch.exceptions import NotFoundError, ConnectionTimeout
 from operator import itemgetter
 from datetime import datetime
 from os import listdir
 from os.path import join
 from functools import partial
+
+import numpy as np
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk, BulkIndexError
+from elasticsearch.exceptions import NotFoundError, ConnectionTimeout
+
+from image_match.goldberg import ImageSignature
 
 
 class SignatureES(object):

@@ -158,7 +158,7 @@ class ImageSignature(object):
                 arr = np.array(img.convert('RGB'))
             except IOError:
                 #  try again due to PIL weirdness
-                arr = np.array(img.convert('RGB'))
+                return imread(image_or_path, as_grey=True)
             if handle_mpo:
                 # take the first images from the MPO
                 if arr.shape == (2,) and isinstance(arr[1].tolist(), MpoImageFile):
@@ -387,3 +387,23 @@ class ImageSignature(object):
                              (difference_array >= interval[1])] = -(level + 1)
         
         return None
+
+    @staticmethod
+    def normalized_distance(a, b, nan_value=1.0):
+        """Compute normalized distance between two points.
+
+        Computes || b - a || / ( ||b|| + ||a||)
+
+        Keyword arguments:
+        a -- array of size m
+        b -- array of size m
+        nan_value -- value to replace 0.0/0.0 = nan with (default is 1.0, to take
+                     those featureless images out of contention)
+        """
+        topvec = np.linalg.norm(b - a)
+        norm1 = np.linalg.norm(b)
+        norm2 = np.linalg.norm(a)
+        finvec = topvec / (norm1 + norm2)
+        finvec[np.isnan(finvec)] = nan_value
+
+        return finvec
