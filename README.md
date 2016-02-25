@@ -75,7 +75,7 @@ Now consider this subtly-modified version of the Mona Lisa:
 
 (credit: Michael Russell [Attribution-ShareAlike 2.0 Generic](https://creativecommons.org/licenses/by-sa/2.0/))
 
-How does similar is it to our original Mona Lisa?
+How similar is it to our original Mona Lisa?
 ```python
 d = gis.generate_signature('https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg')
 gis.normalized_distance(a, d)
