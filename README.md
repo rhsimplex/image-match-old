@@ -67,7 +67,7 @@ c = gis.generate_signature('https://upload.wikimedia.org/wikipedia/commons/e/e0/
 gis.normalized_distance(a, c)
 ```
 
-Returns `0.68446275381507249`, almost certainly not a match.  image-match doesn't have to generate a signature from a URL; a file-path or even an in-memory bytestream will do (be sure to specify `bytestream=True' in the latter case).
+Returns `0.68446275381507249`, almost certainly not a match.  image-match doesn't have to generate a signature from a URL; a file-path or even an in-memory bytestream will do (be sure to specify `bytestream=True` in the latter case).
 
 Now consider this subtly-modified version of the Mona Lisa:
 
