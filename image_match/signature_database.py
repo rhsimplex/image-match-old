@@ -576,7 +576,7 @@ def max_contrast(array):
     return None
 
 
-def normalized_distance(target_array, vec, nan_value=1.0):
+def normalized_distance(_target_array, _vec, nan_value=1.0):
     """Compute normalized distance to many points.
 
     Computes || vec - b || / ( ||vec|| + ||b||) for every b in target_array
@@ -587,6 +587,8 @@ def normalized_distance(target_array, vec, nan_value=1.0):
     nan_value -- value to replace 0.0/0.0 = nan with (default is 1.0, to take
                  those featureless images out of contention)
     """
+    target_array = _target_array.astype(int)
+    vec = _vec.astype(int)
     topvec = np.linalg.norm(vec - target_array, axis=1)
     norm1 = np.linalg.norm(vec, axis=0)
     norm2 = np.linalg.norm(target_array, axis=1)

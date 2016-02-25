@@ -389,7 +389,7 @@ class ImageSignature(object):
         return None
 
     @staticmethod
-    def normalized_distance(a, b, nan_value=1.0):
+    def normalized_distance(_a, _b):
         """Compute normalized distance between two points.
 
         Computes || b - a || / ( ||b|| + ||a||)
@@ -400,10 +400,9 @@ class ImageSignature(object):
         nan_value -- value to replace 0.0/0.0 = nan with (default is 1.0, to take
                      those featureless images out of contention)
         """
-        topvec = np.linalg.norm(b - a)
+        b = _b.astype(int)
+        a = _a.astype(int)
+        norm_diff = np.linalg.norm(b - a)
         norm1 = np.linalg.norm(b)
         norm2 = np.linalg.norm(a)
-        finvec = topvec / (norm1 + norm2)
-        finvec[np.isnan(finvec)] = nan_value
-
-        return finvec
+        return norm_diff / (norm1 + norm2)
