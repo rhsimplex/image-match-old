@@ -91,7 +91,7 @@ gis.normalized_distance(a, d)
 
 This gives us `0.42557196987336648`. So markedly different than the two original Mona Lisas, but considerably closer than the Caravaggio.
 
-## Storing the signatures
+## Storing and searching the Signatures
 
 In addition to generating image signatures, image-match also facilitates storing and efficient lookup of images—even for up to (at least) a billion images.  Instagram account only has a few million images? Don't worry, you can get 80M images [here](http://horatio.cs.nyu.edu/mit/tiny/data/index.html]) to play with.
 
@@ -99,7 +99,7 @@ A signature database wraps an Elasticsearch index, so you'll need Elasticsearch 
 
 ```python
 from elasticsearch import Elasticsearch
-from image_match.signature_database import SignatureES
+from image_match.elasticsearch_driver import SignatureES
 
 es = Elasticsearch()
 ses = SignatureES(es)
@@ -119,36 +119,34 @@ ses.add_image('https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg')
 Now let's search for one of those Mona Lisas:
 
 ```python
-ses.bool_query('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+ses.search_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
 ```
-
-`bool_query` is so-named because it uses [Bool Query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html) functionality of Elasticsearch.  We can actually search here without computing signatures, which makes it very fast on large image corpora.
 
 The result is a list of hits:
 
 ```python
 [
  {'dist': 0.0,
-  'id': u'AVMdCX8WrUjAIrQRJPr6',
-  'score': 7.937254,
-  'url': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg'},
+  'id': u'AVMyXOz30osmmAxpPvxy',
+  'path': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg',
+  'score': 7.937254},
  {'dist': 0.23889600350807427,
-  'id': u'AVMdCTpmrUjAIrQRJPr5',
-  'score': 0.28797293,
-  'url': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg'},
- {'dist': 0.36426714382512343,
-  'id': u'AVMdCc9mrUjAIrQRJPr8',
-  'score': 0.0499953,
-  'url': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg'}
+  'id': u'AVMyXMpV0osmmAxpPvxx',
+  'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
+  'score': 0.28797293},
+ {'dist': 0.35790573405700571,
+  'id': u'AVMyXRGu0osmmAxpPvx0',
+  'path': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg',
+  'score': 0.0499953}
 ]
 ```
 
-`dist` is the normalized distance, like we computed above. Hence, lower numbers are better with `0.0` being a perfect match. `id` is an identifier assigned by the database. `score` is computed by Elasticsearch, and higher numbers are better here. `url` is the original path.
+`dist` is the normalized distance, like we computed above. Hence, lower numbers are better with `0.0` being a perfect match. `id` is an identifier assigned by the database. `score` is computed by Elasticsearch, and higher numbers are better here. `path` is the original path (url or file path).
 
 Notice all three Mona Lisa images appear in the results, with the identical image being a perfect (`'dist': 0.0`) match. If we search instead for the Caravaggio,
 
 ```python
-ses.bool_query('https://upload.wikimedia.org/wikipedia/commons/e/e0/Caravaggio_-_Cena_in_Emmaus.jpg')
+ses.search_image('https://upload.wikimedia.org/wikipedia/commons/e/e0/Caravaggio_-_Cena_in_Emmaus.jpg')
 ```
 
 You get:
@@ -156,21 +154,29 @@ You get:
 ```python
 [
  {'dist': 0.0,
-  'id': u'AVMdCaXerUjAIrQRJPr7',
-  'score': 7.937254,
-  'url': u'https://upload.wikimedia.org/wikipedia/commons/e/e0/Caravaggio_-_Cena_in_Emmaus.jpg'},
- {'dist': 0.48742886583201611,
-  'id': u'AVMdCc9mrUjAIrQRJPr8',
-  'score': 0.0019998122,
-  'url': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg'}
+  'id': u'AVMyXQFw0osmmAxpPvxz',
+  'path': u'https://upload.wikimedia.org/wikipedia/commons/e/e0/Caravaggio_-_Cena_in_Emmaus.jpg',
+  'score': 7.937254}
 ]
 ```
 
-It catches one of the the Mona Lisas, but at a distance of `0.48742886583201611` it's a very marginal match. We can restrict our search with the `distance_cutoff` parameter:
-
+It only finds the Caravaggio, which makes sense! But what if we wanted an even more restrictive search? For instance, maybe we only want unmodified Mona Lisas -- just photographs of the original. We can restrict our search with a hard cutoff using the `distance_cutoff` keyword argument:
 ```python
-ses = SignatureES(es, distance_cutoff=0.4)
-ses.bool_query('https://upload.wikimedia.org/wikipedia/commons/e/e0/Caravaggio_-_Cena_in_Emmaus.jpg')
+ses = SignatureES(es, distance_cutoff=0.3)
+ses.search_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
 ```
 
-Which now returns only the identical match.
+Which now returns only the unmodified, catless Mona Lisas:
+
+```python
+[
+ {'dist': 0.0,
+  'id': u'AVMyXOz30osmmAxpPvxy',
+  'path': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg',
+  'score': 7.937254},
+ {'dist': 0.23889600350807427,
+  'id': u'AVMyXMpV0osmmAxpPvxx',
+  'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
+  'score': 0.28797293}
+]
+```
