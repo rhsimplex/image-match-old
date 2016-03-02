@@ -194,7 +194,8 @@ c = client.images.images
 ses = SignatureMongo(c)
 ```
 
-now you
+now you can use the same functionality as above like `ses.add_image(...)`.
+
 We tried to separate signature logic from the database insertion/search as much as possible.  To write your own database backend, you can inherit from the `SignatureDatabaseBase` class and override the appropriate methods:
 
 ```python
