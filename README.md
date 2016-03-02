@@ -127,15 +127,15 @@ The result is a list of hits:
 ```python
 [
  {'dist': 0.0,
-  'id': u'AVMyXOz30osmmAxpPvxy',
+  'id': u'AVM37oZq0osmmAxpPvx7',
   'path': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg',
   'score': 7.937254},
- {'dist': 0.23889600350807427,
-  'id': u'AVMyXMpV0osmmAxpPvxx',
+ {'dist': 0.22095170140933634,
+  'id': u'AVM37nMg0osmmAxpPvx6',
   'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
   'score': 0.28797293},
- {'dist': 0.35790573405700571,
-  'id': u'AVMyXRGu0osmmAxpPvx0',
+ {'dist': 0.42557196987336648,
+  'id': u'AVM37p530osmmAxpPvx9',
   'path': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg',
   'score': 0.0499953}
 ]
@@ -180,3 +180,48 @@ Which now returns only the unmodified, catless Mona Lisas:
   'score': 0.28797293}
 ]
 ```
+
+## Other database backends
+Though we designed image-match with Elasticsearch in mind, other database backends are possible. For demonstration purposes we include also a [MongoDB](https://www.mongodb.org/) driver:
+
+```python
+from image_match.mongodb_driver import SignatureMongo
+from pymongo import MongoClient
+
+client = MongoClient(connect=False)
+c = client.images.images
+
+ses = SignatureMongo(c)
+```
+
+now you
+We tried to separate signature logic from the database insertion/search as much as possible.  To write your own database backend, you can inherit from the `SignatureDatabaseBase` class and override the appropriate methods:
+
+```python
+from signature_database_base import SignatureDatabaseBase
+# other relevant imports
+
+
+class MySignatureBackend(SignatureDatabaseBase):
+
+    # if you need to do some setup, override __init__
+    def __init__(self, myarg1, myarg2, *args, **kwargs):
+        # do some initializing stuff here if necessary
+        # ...
+        super(MySignatureBakend, self).__init__(*args, **kwargs)
+        
+    # you MUST implement these two functions
+    def search_single_record(self, rec):
+        # should query your database given a record generated from signature_database_base.make_record
+        # ...
+        # should return a list of dicts like [{'id': 'some_unique_id_from_db', 'dist': 0.109234, 'path': 'url/or/filepath'}, {...} ...]
+        # you can have other keys, but you need at least id and dist
+        return formatted_results
+        
+    def insert_single_record(self, rec):
+        # if your database driver or instance can accept a dict as input, this should be very simple
+    
+    # ...
+```
+
+Unfortunately, implementing a good `search_single_record` function does require some knowledge of [the search algorithm](http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps).  You can also look at the two included database drivers for guidelines.
