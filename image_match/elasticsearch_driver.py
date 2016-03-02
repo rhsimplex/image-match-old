@@ -1,6 +1,5 @@
 from signature_database_base import SignatureDatabaseBase
 from signature_database_base import normalized_distance
-from operator import itemgetter
 from datetime import datetime
 import numpy as np
 
@@ -39,12 +38,12 @@ class SignatureES(SignatureDatabaseBase):
                               size=self.size,
                               timeout=self.timeout)['hits']['hits']
 
-        sigs = np.array([x['fields']['signature'] for x in res], dtype='uint8')
+        sigs = np.array([x['fields']['signature'] for x in res])
 
         if sigs.size == 0:
             return []
 
-        dists = normalized_distance(sigs, np.array(signature, dtype='uint8'))
+        dists = normalized_distance(sigs, np.array(signature))
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
