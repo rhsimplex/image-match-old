@@ -181,6 +181,48 @@ Which now returns only the unmodified, catless Mona Lisas:
 ]
 ```
 
+### Distorted and transformed images
+
+image-match is also robust against basic image transforms.  Take this squashed Mona Lisa:
+
+![http://i.imgur.com/CVYBCCy.jpg](http://i.imgur.com/CVYBCCy.jpg)
+
+No problem, just search as usual:
+
+```python
+ses.search_image('http://i.imgur.com/CVYBCCy.jpg')
+```
+
+returns
+
+```
+[
+ {'dist': 0.15454905655638429,
+  'id': u'AVM37oZq0osmmAxpPvx7',
+  'path': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg',
+  'score': 1.6818419},
+ {'dist': 0.24980626832071956,
+  'id': u'AVM37nMg0osmmAxpPvx6',
+  'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
+  'score': 0.16198477},
+ {'dist': 0.43387141782958921,
+  'id': u'AVM37p530osmmAxpPvx9',
+  'path': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg',
+  'score': 0.031996995}
+]
+```
+
+as expected.  Now, consider this rotated version:
+
+![http://i.imgur.com/T5AusYd.jpg](http://i.imgur.com/T5AusYd.jpg)
+
+image-match doesn't search for rotations and mirror images by default. Searching for this image will return no results, unless you search with `all_orientations=True`:
+
+```python
+ses.search_image('http://i.imgur.com/T5AusYd.jpg', all_orientations=True)
+```
+Then you get the expected matches.
+
 ## Other database backends
 Though we designed image-match with Elasticsearch in mind, other database backends are possible. For demonstration purposes we include also a [MongoDB](https://www.mongodb.org/) driver:
 
