@@ -65,19 +65,19 @@ class ImageSignature(object):
         assert type(n) is int, 'n should be an integer > 1'
         assert n > 1, 'n should be greater than 1 (%r given)' % n
         self.n = n
-        
+
         assert type(P) is int or P is None, 'P should be an integer >= 1, or None'
         if P is not None:
             assert P >= 1, 'P should be greater than 0 (%r given)' % n
         self.P = P
-        
+
         assert type(diagonal_neighbors) is bool, 'diagonal_neighbors should be boolean'
         self.diagonal_neighbors = diagonal_neighbors
         self.sig_length = self.n ** 2 * (4 + self.diagonal_neighbors * 4)
 
         assert type(fix_ratio) is bool, 'fix_ratio should be boolean'
         self.fix_ratio = fix_ratio
-        
+
         assert type(identical_tolerance) is float or type(identical_tolerance) is int,\
             'identical_tolerance should be a number between 1 and 0'
         assert 0. <= identical_tolerance <= 1.,\
@@ -154,7 +154,7 @@ class ImageSignature(object):
 
         # Step 1:    Load image as array of grey-levels
         im_array = self.preprocess_image(path_or_image, handle_mpo=self.handle_mpo, bytestream=bytestream)
-        
+
         # Step 2a:   Determine cropping boundaries
         if self.crop_percentiles is not None:
             image_limits = self.crop_image(im_array,
@@ -163,17 +163,17 @@ class ImageSignature(object):
                                            fix_ratio=self.fix_ratio)
         else:
             image_limits = None
-        
+
         # Step 2b:   Generate grid centers
         x_coords, y_coords = self.compute_grid_points(im_array,
                                                       n=self.n, window=image_limits)
-        
+
         # Step 3:    Compute grey level mean of each P x P
         #           square centered at each grid point
         avg_grey = self.compute_mean_level(im_array, x_coords, y_coords, P=self.P)
 
         # Step 4a:   Compute array of differences for each
-        #           grid point vis-a-vis each neighbor 
+        #           grid point vis-a-vis each neighbor
         diff_mat = self.compute_differentials(avg_grey,
                                               diagonal_neighbors=self.diagonal_neighbors)
 
@@ -206,18 +206,18 @@ class ImageSignature(object):
         Examples:
             >>> gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
             array([[ 0.26344431,  0.32423294,  0.30406745, ...,  0.35069725,
-                 0.36499961,  0.36361569],
-               [ 0.29676627,  0.28640118,  0.34523255, ...,  0.3703051 ,
-                 0.34931333,  0.31655686],
-               [ 0.35305216,  0.31858431,  0.36202   , ...,  0.40588196,
-                 0.37284275,  0.30871373],
-               ...,
-               [ 0.05932863,  0.05540706,  0.05540706, ...,  0.01954745,
-                 0.01954745,  0.01562588],
-               [ 0.0632502 ,  0.05540706,  0.05148549, ...,  0.01954745,
-                 0.02346902,  0.01562588],
-               [ 0.06717176,  0.05540706,  0.05148549, ...,  0.02346902,
-                 0.02739059,  0.01954745]])
+                     0.36499961,  0.36361569],
+                   [ 0.29676627,  0.28640118,  0.34523255, ...,  0.3703051 ,
+                     0.34931333,  0.31655686],
+                   [ 0.35305216,  0.31858431,  0.36202   , ...,  0.40588196,
+                     0.37284275,  0.30871373],
+                   ...,
+                   [ 0.05932863,  0.05540706,  0.05540706, ...,  0.01954745,
+                     0.01954745,  0.01562588],
+                   [ 0.0632502 ,  0.05540706,  0.05148549, ...,  0.01954745,
+                     0.02346902,  0.01562588],
+                   [ 0.06717176,  0.05540706,  0.05148549, ...,  0.02346902,
+                     0.02739059,  0.01954745]])
 
         """
         if bytestream:
@@ -293,7 +293,7 @@ class ImageSignature(object):
         lower_row_limit = np.searchsorted(rw,
                                           np.percentile(rw, lower_percentile),
                                           side='right')
-       
+
         # if image is nearly featureless, use default region
         if lower_row_limit > upper_row_limit:
             lower_row_limit = int(lower_percentile/100.*image.shape[0])
@@ -314,13 +314,13 @@ class ImageSignature(object):
         # otherwise, proceed as normal
         return [(lower_row_limit, upper_row_limit),
                 (lower_column_limit, upper_column_limit)]
-        
+
     @staticmethod
     def compute_grid_points(image, n=9, window=None):
         """Computes grid points for image analysis.
 
         Corresponds to the second part of 'step 2' in the paper
-        
+
         Args:
             image (numpy array): n x m array of floats -- the greyscale image. Typically,
                 the output of preprocess_image
@@ -396,14 +396,14 @@ class ImageSignature(object):
             P = max([2.0, int(0.5 + min(image.shape)/20.)])     # per the paper
 
         avg_grey = np.zeros((x_coords.shape[0], y_coords.shape[0]))
-        
+
         for i, x in enumerate(x_coords):        # not the fastest implementation
             lower_x_lim = max([x - P/2, 0])
             upper_x_lim = min([lower_x_lim + P, image.shape[0]])
             for j, y in enumerate(y_coords):
                 lower_y_lim = max([y - P/2, 0])
                 upper_y_lim = min([lower_y_lim + P, image.shape[1]])
-                
+
                 avg_grey[i, j] = np.mean(image[lower_x_lim:upper_x_lim,
                                         lower_y_lim:upper_y_lim])  # no smoothing here as in the paper
 
@@ -476,13 +476,13 @@ class ImageSignature(object):
             # this implementation will only work for a square (m x m) grid
             diagonals = np.arange(-grey_level_matrix.shape[0] + 1,
                                   grey_level_matrix.shape[0])
-            
+
             upper_left_neighbors = sum(
                 [np.diagflat(np.insert(np.diff(np.diag(grey_level_matrix, i)), 0, 0), i)
                  for i in diagonals])
             lower_right_neighbors = -np.pad(upper_left_neighbors[1:, 1:],
                                             (0, 1), mode='constant')
-        
+
             # flip for anti-diagonal differences
             flipped = np.fliplr(grey_level_matrix)
             upper_right_neighbors = sum([np.diagflat(np.insert(
@@ -499,7 +499,7 @@ class ImageSignature(object):
                 np.fliplr(lower_left_neighbors),
                 down_neighbors,
                 lower_right_neighbors]))
-        
+
         return np.dstack(np.array([
             up_neighbors,
             left_neighbors,
@@ -546,11 +546,11 @@ class ImageSignature(object):
                     ...
 
         """
-        
+
         # set very close values as equivalent
         mask = np.abs(difference_array) < identical_tolerance
         difference_array[mask] = 0.
-        
+
         # if image is essentially featureless, exit here
         if np.all(mask):
             return None
@@ -560,7 +560,7 @@ class ImageSignature(object):
                                          np.linspace(0, 100, n_levels+1))
         negative_cutoffs = np.percentile(difference_array[difference_array < 0.],
                                          np.linspace(100, 0, n_levels+1))
-            
+
         for level, interval in enumerate([positive_cutoffs[i:i+2]
                                           for i in range(positive_cutoffs.shape[0] - 1)]):
             difference_array[(difference_array >= interval[0]) &
@@ -570,7 +570,7 @@ class ImageSignature(object):
                                           for i in range(negative_cutoffs.shape[0] - 1)]):
             difference_array[(difference_array <= interval[0]) &
                              (difference_array >= interval[1])] = -(level + 1)
-        
+
         return None
 
     @staticmethod
@@ -591,7 +591,7 @@ class ImageSignature(object):
             >>> b = gis.generate_signature('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
             >>> gis.normalized_distance(a, b)
             0.22095170140933634
-            
+
         """
         b = _b.astype(int)
         a = _a.astype(int)
