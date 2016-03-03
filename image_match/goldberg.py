@@ -10,8 +10,7 @@ import numpy as np
 class ImageSignature(object):
     """Image signature generator.
 
-    Based on the method of Goldberg, et al. Available at
-    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.2585&rep=rep1&type=pdf
+    Based on the method of Goldberg, et al. Available at http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps
     """
 
     def __init__(self, n=9, crop_percentiles=(5, 95), P=None, diagonal_neighbors=True,
@@ -20,22 +19,26 @@ class ImageSignature(object):
 
         The default parameters match those given in Goldberg's paper.
 
-        Keyword arguments:
-        n -- size of grid imposed on image. Grid is n x n (default 9)
-        
-        crop_percentiles -- lower and upper bounds when considering how much
-            variance to keep in the image (default (5, 95))
-        
-        P -- size of sample region, P x P. If none, uses a sample region based
-            on the size of the image (default None)
+        Note:
+            Non-default parameters have not been extensively tested. Use carefully.
 
-        diagonal_neighbors -- whether to include diagonal neighbors (default True)
+        Args:
+            n (Optional[int]): size of grid imposed on image. Grid is n x n (default 9)
 
-        identical_tolerance -- cutoff difference for declaring two adjacent
-            grid points identical (default 2/255)
+            crop_percentiles (Optional[tuple]): lower and upper bounds when considering how much
+                variance to keep in the image (default (5, 95))
 
-        n_levels -- number of positive and negative groups to stratify neighbor
-            differences into. n = 2 -> [-2, -1, 0, 1, 2] (default 2)
+            P (Optional[int]): size of sample region, P x P. If none, uses a sample region based
+                on the size of the image (default None)
+
+            diagonal_neighbors (Optional[boolean]): whether to include diagonal grid neighbors
+                (default True)
+
+            identical_tolerance (Optional[float]): cutoff difference for declaring two adjacent
+                grid points identical (default 2/255)
+
+            n_levels (Optional[int]): number of positive and negative groups to stratify neighbor
+                differences into. n = 2 -> [-2, -1, 0, 1, 2] (default 2)
 
         """
 
@@ -93,11 +96,60 @@ class ImageSignature(object):
 
         See section 3 of Goldberg, et al.
 
-        Keyword arguments:
-        path_or_image -- image path, or image array
-        bytestream -- will the image be passed as raw bytes? default: False
+        Args:
+            path_or_image (string or numpy array): image path, or image array
+            bytestream (Optional[boolean]): will the image be passed as raw bytes?
+                That is, is the 'path_or_image' argument an in-memory image?
+                (default False)
 
-        Returns a signature array
+        Returns:
+            The image signature: A rank 1 numpy array of length n x n x 8
+                (or n x n x 4 if diagonal_neighbors == False)
+
+        Examples:
+            >>> from image_match.goldberg import ImageSignature
+            >>> gis = ImageSignature()
+            >>> gis.generate_signature('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            array([ 0,  0,  0,  0,  0,  0,  2,  2,  0,  0,  0,  0,  0,  2,  2,  2,  0,
+                    0,  0,  0,  2,  2,  2,  2,  0,  0,  0, -2,  2,  2,  1,  2,  0,  0,
+                    0, -2,  2, -1, -1,  2,  0,  0,  0, -2, -2, -2, -2, -1,  0,  0,  0,
+                    2, -1,  2,  2,  2,  0,  0,  0,  1, -1,  2,  2, -1,  0,  0,  0,  1,
+                    0,  2, -1,  0,  0, -2, -2,  0, -2,  0,  2,  2, -2, -2, -2,  2,  2,
+                    2,  2,  2, -2, -2, -2, -2, -2,  1,  2, -2, -2, -1,  1,  2,  1,  2,
+                   -1,  1, -2,  1,  2, -1,  2, -1,  0,  2, -2,  2, -2, -2,  1, -2,  1,
+                    2,  1, -2, -2, -1, -2,  1,  1, -1, -2, -2, -2,  2, -2,  2,  2,  2,
+                    1,  1,  0,  2,  0,  2,  2,  0,  0, -2, -2,  0,  1,  0, -1,  1, -2,
+                   -2, -1, -1,  1, -1,  1,  1, -2, -2, -2, -1, -2, -1,  1, -1,  2,  1,
+                    1,  2,  1,  2,  2, -1, -1,  0,  2, -1,  2,  2, -1, -1, -2, -1, -1,
+                   -2,  1, -2, -2, -1, -2, -1, -2, -1, -2, -2, -1, -1,  1, -2, -2,  2,
+                   -1,  1,  1, -2, -2, -2,  0,  1,  0,  1, -1,  0,  0,  1,  1,  0,  1,
+                    0,  1,  1, -1, -1,  1, -1,  1, -1,  1, -1, -1, -1, -2, -1, -1, -1,
+                   -2, -2,  1, -2, -2,  1, -2, -2, -2, -2,  1,  1,  2,  2,  1, -2, -2,
+                   -1,  1,  2,  2, -1,  2, -2, -1,  1,  1,  1, -1, -2, -1, -2, -2,  0,
+                    1, -1, -1,  1, -2, -2,  0,  1,  2,  1,  0,  2,  0,  2,  2,  0,  0,
+                   -1,  1,  0,  1,  0,  1,  2, -1, -1,  1, -1, -1, -1,  2,  1,  1,  2,
+                    2,  1, -2,  2,  2,  1,  2,  2,  2,  2, -1,  2,  2,  2,  2,  2,  2,
+                    1,  2,  2,  2,  2,  1,  1,  2, -2,  2,  2,  2,  2, -1,  2,  2, -2,
+                    2,  2,  2,  2,  0,  0, -2, -2,  1,  0, -1,  1, -1, -2,  0, -1,  0,
+                   -1,  1,  0,  0, -1,  1,  0,  2,  0,  2,  2, -2, -2, -2, -2, -1, -1,
+                   -1,  0, -1, -2, -2,  1, -1, -1,  1,  1, -1, -2, -2,  1,  1,  1,  1,
+                    2, -2, -2, -2, -1,  1,  1,  1,  2, -2, -2, -2, -1, -1,  0,  1,  1,
+                   -2, -2,  0,  1, -1,  1,  1,  1, -2,  1,  1,  1,  2,  2,  2,  2, -1,
+                   -1,  0, -2,  0,  0,  1,  0,  0, -2,  1,  0, -1,  0, -1, -2, -2,  1,
+                    1,  1,  1, -1, -1, -2,  0, -1, -1, -1, -1, -2, -2, -2, -1, -1, -1,
+                    1,  1, -2, -2,  1, -2, -1,  0, -1,  0, -2, -1,  1, -2, -1, -1,  0,
+                    0, -1,  0,  0, -1, -1, -2,  0, -1,  0,  0, -1, -1, -2,  0,  1,  1,
+                    1,  0,  1, -2, -1,  0, -1,  0, -1,  0,  0,  0,  1,  1,  0, -1,  0,
+                    2, -1,  2,  1,  2,  1, -2,  2, -1, -2,  2,  2,  2,  2,  2,  2,  2,
+                    2,  2,  2,  2, -2,  2,  1,  2,  2, -1,  1,  1, -2,  1, -2, -2, -1,
+                   -1,  0,  0, -1,  0, -2, -1, -1,  0,  0, -1,  0, -1, -1, -1, -1,  1,
+                    0,  1,  1,  1, -1,  0,  1, -1,  0,  0, -1,  0, -1,  0,  0,  0, -2,
+                   -2,  0, -2,  0,  0,  0,  1,  1, -2,  2, -2,  0,  0,  0,  2, -2, -1,
+                    2,  2,  0,  0,  0, -2, -2,  2, -2,  1,  0,  0,  0, -2,  2,  2, -1,
+                    2,  0,  0,  0,  1,  1,  1, -2,  1,  0,  0,  0,  1,  1,  1, -1,  1,
+                    0,  0,  0,  1,  0,  1, -1,  1,  0,  0,  0, -1,  0,  0, -1,  0,  0,
+                    0,  0], dtype=int8)
+
         """
 
         # Step 1:    Load image as array of grey-levels
@@ -139,8 +191,34 @@ class ImageSignature(object):
 
         Corresponds to 'step 1' in Goldberg's paper
 
-        Keyword arguments:
-        image_or_path -- path to image, or image array
+        Args:
+            image_or_path (string or numpy array): image path, or image array
+            bytestream (Optional[boolean]): will the image be passed as raw bytes?
+                That is, is the 'path_or_image' argument an in-memory image?
+                (default False)
+            handle_mpo (Optional[boolean]): try to compute a signature for stero-
+                scopic images by extracting the first image of the set (default
+                False)
+
+        Returns:
+            Array of floats corresponding to greyscale level at each pixel
+
+        Examples:
+            >>> gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            array([[ 0.26344431,  0.32423294,  0.30406745, ...,  0.35069725,
+                 0.36499961,  0.36361569],
+               [ 0.29676627,  0.28640118,  0.34523255, ...,  0.3703051 ,
+                 0.34931333,  0.31655686],
+               [ 0.35305216,  0.31858431,  0.36202   , ...,  0.40588196,
+                 0.37284275,  0.30871373],
+               ...,
+               [ 0.05932863,  0.05540706,  0.05540706, ...,  0.01954745,
+                 0.01954745,  0.01562588],
+               [ 0.0632502 ,  0.05540706,  0.05148549, ...,  0.01954745,
+                 0.02346902,  0.01562588],
+               [ 0.06717176,  0.05540706,  0.05148549, ...,  0.02346902,
+                 0.02739059,  0.01954745]])
+
         """
         if bytestream:
             try:
@@ -174,17 +252,28 @@ class ImageSignature(object):
 
     @staticmethod
     def crop_image(image, lower_percentile=5, upper_percentile=95, fix_ratio=False):
-        """Crops an image, removing featureless regions.
+        """Crops an image, removing featureless border regions.
 
         Corresponds to the first part of 'step 2' in Goldberg's paper
 
-        Keyword arguments:
-        image -- n x m array
-        lower_percentile -- crop image by percentage of difference (default 5)
-        upper_percentile -- as lower_percentile (default 95)
-        fix_ratio -- use the larger ratio for both directions (default False). This is useful for
-            using the fast signature transforms on sparse but very similar images (e.g. renderings from
-            fixed directions). Use with care: only use if you can guarantee the incoming image is square
+        Args:
+            image (numpy array): n x m array of floats -- the greyscale image. Typically, the
+                output of preprocess_image
+            lower_percentile (Optional[int]): crop image by percentage of difference (default 5)
+            upper_percentile (Optional[int]): as lower_percentile (default 95)
+            fix_ratio (Optional[boolean]): use the larger ratio for both directions. This is useful
+                for using the fast signature transforms on sparse but very similar images (e.g.
+                renderings from fixed directions). Use with care -- only use if you can guarantee the
+                incoming image is square (default False).
+
+        Returns:
+            A pair of tuples describing the 'window' of the image to use in analysis: [(top, bottom), (left, right)]
+
+        Examples:
+            >>> img = gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> gis.crop_image(img)
+            [(36, 684), (24, 452)]
+
         """
         # row-wise differences
         rw = np.cumsum(np.sum(np.abs(np.diff(image, axis=1)), axis=1))
@@ -232,10 +321,23 @@ class ImageSignature(object):
 
         Corresponds to the second part of 'step 2' in the paper
         
-        Keyword arguments:
-        image -- n x m array
-        n -- number of gridpoints in each direction (default 9)
-        window -- limiting coordinates [(t, b), (l, r)] (default None)
+        Args:
+            image (numpy array): n x m array of floats -- the greyscale image. Typically,
+                the output of preprocess_image
+            n (Optional[int]): number of gridpoints in each direction (default 9)
+            window (Optional[list of tuples]): limiting coordinates [(t, b), (l, r)], typically the
+                output of (default None)
+
+        Returns:
+            tuple of arrays indicating the vertical and horizontal locations of the grid points
+
+        Examples:
+            >>> img = gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> window = gis.crop_image(img)
+            >>> gis.compute_grid_points(img, window=window)
+            (array([100, 165, 230, 295, 360, 424, 489, 554, 619]),
+             array([ 66, 109, 152, 195, 238, 280, 323, 366, 409]))
+
         """
 
         # if no limits are provided, use the entire image
@@ -253,11 +355,41 @@ class ImageSignature(object):
 
         Corresponds to 'step 3'
 
-        Keyword arguments:
-        image -- n x m array
-        x_coords -- 1d array of row numbers
-        y_coords -- 1d array of column numbers
-        P -- size of boxes in pixels (default None)
+        Args:
+            image (numpy array): n x m array of floats -- the greyscale image. Typically,
+                the output of preprocess_image
+            x_coords (numpy array): array of row numbers
+            y_coords (numpy array): array of column numbers
+            P (Optional[int]): size of boxes in pixels (default None)
+
+        Returns:
+            an N x N array of average greyscale around the gridpoint, where N is the
+                number of grid points
+
+        Examples:
+            >>> img = gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> window = gis.crop_image(img)
+            >>> grid = gis.compute_grid_points(img, window=window)
+            >>> gis.compute_mean_level(img, grid[0], grid[1])
+            array([[ 0.62746325,  0.62563642,  0.62348078,  0.50651686,  0.37438874,
+                     0.0644063 ,  0.55968952,  0.59356148,  0.60473832],
+                   [ 0.35337797,  0.50272543,  0.27711346,  0.42384226,  0.39006181,
+                     0.16773968,  0.10471924,  0.33647144,  0.62902124],
+                   [ 0.20307514,  0.19021892,  0.12435402,  0.44990121,  0.38527996,
+                     0.08339507,  0.05530059,  0.18469107,  0.21125228],
+                   [ 0.25727387,  0.1669419 ,  0.08964046,  0.1372754 ,  0.48529236,
+                     0.39894004,  0.10387907,  0.11282135,  0.30014612],
+                   [ 0.23447867,  0.15702549,  0.25232943,  0.75172715,  0.79488688,
+                     0.4943538 ,  0.29645163,  0.10714578,  0.0629376 ],
+                   [ 0.22167555,  0.04839472,  0.10125833,  0.1550749 ,  0.14346914,
+                     0.04713144,  0.10095568,  0.15349296,  0.04456733],
+                   [ 0.09233709,  0.11210942,  0.05361996,  0.07066566,  0.04191625,
+                     0.03548839,  0.03420656,  0.05025029,  0.03519956],
+                   [ 0.19226873,  0.20647194,  0.62972106,  0.45514529,  0.05620413,
+                     0.03383168,  0.03413588,  0.04741828,  0.02987698],
+                   [ 0.05799523,  0.23310153,  0.43719717,  0.27666873,  0.25106573,
+                     0.11094163,  0.10180622,  0.04633349,  0.02704855]])
+
         """
 
         if P is None:
@@ -283,7 +415,7 @@ class ImageSignature(object):
 
         First part of 'step 4' in the paper.
 
-        Returns n x n x 8 array for an n x n grid (if diagonal_neighbors == True)
+        Returns n x n x 8 rank 3 array for an n x n grid (if diagonal_neighbors == True)
 
         The n x nth coordinate corresponds to a grid point.  The eight values are
         the differences between neighboring grid points, in this order:
@@ -297,9 +429,34 @@ class ImageSignature(object):
         lower
         lower right
 
-        Keyword arguments:
-        grey_level_matrix -- grid of values sampled from image
-        diagonal_neighbors -- whether or not to use diagonal neighbors (default True)
+        Args:
+            grey_level_matrix (numpy array): grid of values sampled from image
+            diagonal_neighbors (Optional[boolean]): whether or not to use diagonal
+                neighbors (default True)
+
+        Returns:
+            a n x n x 8 rank 3 numpy array for an n x n grid (if diagonal_neighbors == True)
+
+        Examples:
+            >>> img = gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> window = gis.crop_image(img)
+            >>> grid = gis.compute_grid_points(img, window=window)
+            >>> grey_levels = gis.compute_mean_level(img, grid[0], grid[1])
+            >>> gis.compute_differentials(grey_levels)
+            array([[[  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+                       0.00000000e+00,   1.82683143e-03,  -0.00000000e+00,
+                       2.74085276e-01,   1.24737821e-01],
+                    [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+                      -1.82683143e-03,   2.15563930e-03,   2.72258444e-01,
+                       1.22910990e-01,   3.48522956e-01],
+                    [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+                      -2.15563930e-03,   1.16963917e-01,   1.20755351e-01,
+                       3.46367317e-01,   1.99638513e-01],
+                    [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+                      -1.16963917e-01,   1.32128118e-01,   2.29403399e-01,
+                       8.26745956e-02,   1.16455050e-01],
+                    ...
+
         """
         right_neighbors = -np.concatenate((np.diff(grey_level_matrix),
                                            np.zeros(grey_level_matrix.shape[0]).
@@ -354,12 +511,40 @@ class ImageSignature(object):
                                 identical_tolerance=2/255., n_levels=2):
         """Normalizes difference matrix in place.
 
-        'Step 4' of the paper.
+        'Step 4' of the paper.  The flattened version of this array is the image signature.
 
-        Keyword arguments:
-        difference_array -- n x n x l array, where l are the differences between the grid point and its neighbors
-        identical_tolerance -- maximum amount two gray values can differ and still be considered equivalent
-        n_levels -- bin differences into 2 n + 1 bins (e.g. n_levels=2 -> [-2, -1, 0, 1, 2])
+        Args:
+            difference_array (numpy array): n x n x l array, where l are the differences between
+                the grid point and its neighbors. Typically the output of compute_differentials
+            identical_tolerance (Optional[float]): maximum amount two gray values can differ and
+                still be considered equivalent (default 2/255)
+            n_levels (Optional 2): bin differences into 2 n + 1 bins (e.g. n_levels=2 -> [-2, -1,
+                0, 1, 2])
+
+        Examples:
+            >>> img = gis.preprocess_image('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> window = gis.crop_image(img)
+            >>> grid = gis.compute_grid_points(img, window=window)
+            >>> grey_levels = gis.compute_mean_level(img, grid[0], grid[1])
+            >>> m = gis.compute_differentials(grey_levels)
+            >>> m
+            array([[[ 0.,  0.,  0.,  0.,  0.,  0.,  2.,  2.],
+                    [ 0.,  0.,  0.,  0.,  0.,  2.,  2.,  2.],
+                    [ 0.,  0.,  0.,  0.,  2.,  2.,  2.,  2.],
+                    [ 0.,  0.,  0., -2.,  2.,  2.,  1.,  2.],
+                    [ 0.,  0.,  0., -2.,  2., -1., -1.,  2.],
+                    [ 0.,  0.,  0., -2., -2., -2., -2., -1.],
+                    [ 0.,  0.,  0.,  2., -1.,  2.,  2.,  2.],
+                    [ 0.,  0.,  0.,  1., -1.,  2.,  2., -1.],
+                    [ 0.,  0.,  0.,  1.,  0.,  2., -1.,  0.]],
+
+                   [[ 0., -2., -2.,  0., -2.,  0.,  2.,  2.],
+                    [-2., -2., -2.,  2.,  2.,  2.,  2.,  2.],
+                    [-2., -2., -2., -2., -2.,  1.,  2., -2.],
+                    [-2., -1.,  1.,  2.,  1.,  2., -1.,  1.],
+                    [-2.,  1.,  2., -1.,  2., -1.,  0.,  2.],
+                    ...
+
         """
         
         # set very close values as equivalent
@@ -394,11 +579,19 @@ class ImageSignature(object):
 
         Computes || b - a || / ( ||b|| + ||a||)
 
-        Keyword arguments:
-        a -- array of size m
-        b -- array of size m
-        nan_value -- value to replace 0.0/0.0 = nan with (default is 1.0, to take
-                     those featureless images out of contention)
+        Args:
+            _a (numpy array): array of size m
+            _b (numpy array): array of size m
+
+        Returns:
+            normalized distance between signatures (float)
+
+        Examples:
+            >>> a = gis.generate_signature('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg')
+            >>> b = gis.generate_signature('https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg')
+            >>> gis.normalized_distance(a, b)
+            0.22095170140933634
+            
         """
         b = _b.astype(int)
         a = _a.astype(int)
