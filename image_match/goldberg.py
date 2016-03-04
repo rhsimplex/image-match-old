@@ -196,9 +196,8 @@ class ImageSignature(object):
             bytestream (Optional[boolean]): will the image be passed as raw bytes?
                 That is, is the 'path_or_image' argument an in-memory image?
                 (default False)
-            handle_mpo (Optional[boolean]): try to compute a signature for stero-
-                scopic images by extracting the first image of the set (default
-                False)
+            handle_mpo (Optional[boolean]): try to compute a signature for steroscopic
+                images by extracting the first image of the set (default False)
 
         Returns:
             Array of floats corresponding to greyscale level at each pixel

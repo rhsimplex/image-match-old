@@ -350,8 +350,8 @@ def get_words(array, k, N):
     Words may overlap.
 
     For example, say your image signature is [0, 1, 2, 0, -1, -2, 0, 1] and
-    k=3 and N=4. That means we want 4 words of length 3.  For this signa-
-    ture, that gives us:
+    k=3 and N=4. That means we want 4 words of length 3.  For this signa-ture,
+    that gives us:
 
     [0, 1, 2]
     [2, 0, -1]
@@ -452,7 +452,6 @@ def normalized_distance(_target_array, _vec, nan_value=1.0):
 
     Returns:
         the normalized distance (float)
-        
     """
     target_array = _target_array.astype(int)
     vec = _vec.astype(int)
