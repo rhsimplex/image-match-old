@@ -350,7 +350,7 @@ def get_words(array, k, N):
     Words may overlap.
 
     For example, say your image signature is [0, 1, 2, 0, -1, -2, 0, 1] and
-    k=3 and N=4. That means we want 4 words of length 3.  For this signa-ture,
+    k=3 and N=4. That means we want 4 words of length 3.  For this signature,
     that gives us:
 
     [0, 1, 2]
