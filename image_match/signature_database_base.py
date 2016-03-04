@@ -149,7 +149,7 @@ class SignatureDatabaseBase(object):
             n_grid (Optional[int]): the n_grid x n_grid size to use in determining
                 the image signature (default 9)
 
-            crop_percentiles (Optional[tuple]): lower and upper bounds when
+            crop_percentiles (Optional[Tuple[int]]): lower and upper bounds when
                 considering how much variance to keep in the image (default (5, 95))
 
             distance_cutoff (Optional [float]): maximum image signature distance to
@@ -287,7 +287,7 @@ def make_record(path, gis, k, N, img=None):
         path (string): path or image data. If bytestream=False, then path is assumed to be
             a URL or filesystem path. Otherwise, it's assumed to be raw image data
 
-        gis (ImageSignature instance): an instance of ImageSignature for generating the
+        gis (ImageSignature): an instance of ImageSignature for generating the
             signature
 
         k (int): width of words for encoding
@@ -359,7 +359,7 @@ def get_words(array, k, N):
     [0, 1]
 
     Args:
-        array (numpy array): array to split into words
+        array (numpy.ndarray): array to split into words
 
         k (int): word length
 
@@ -407,7 +407,7 @@ def words_to_int(word_array):
     [ 0,   1,  0] -> 16
 
     Args:
-        word_array (numpy array): N x k array
+        word_array (numpy.ndarray): N x k array
 
     Returns:
         an array of integers of length N (the integer word encodings)
@@ -429,7 +429,7 @@ def max_contrast(array):
     Needed for first pass lookup on word table.
 
     Args:
-        array (numpy array): target array
+        array (numpy.ndarray): target array
     """
     array[array > 0] = 1
     array[array < 0] = -1
@@ -443,9 +443,9 @@ def normalized_distance(_target_array, _vec, nan_value=1.0):
     Computes || vec - b || / ( ||vec|| + ||b||) for every b in target_array
 
     Args:
-        _target_array (numpy array): N x m array
+        _target_array (numpy.ndarray): N x m array
 
-        _vec (numpy array): array of size m
+        _vec (numpy.ndarray): array of size m
 
         nan_value (Optional[float]): value to replace 0.0/0.0 = nan with
             (default 1.0, to take those featureless images out of contention)

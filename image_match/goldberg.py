@@ -25,7 +25,7 @@ class ImageSignature(object):
         Args:
             n (Optional[int]): size of grid imposed on image. Grid is n x n (default 9)
 
-            crop_percentiles (Optional[tuple]): lower and upper bounds when considering how much
+            crop_percentiles (Optional[Tuple[int]]): lower and upper bounds when considering how much
                 variance to keep in the image (default (5, 95))
 
             P (Optional[int]): size of sample region, P x P. If none, uses a sample region based
@@ -97,7 +97,7 @@ class ImageSignature(object):
         See section 3 of Goldberg, et al.
 
         Args:
-            path_or_image (string or numpy array): image path, or image array
+            path_or_image (string or numpy.ndarray): image path, or image array
             bytestream (Optional[boolean]): will the image be passed as raw bytes?
                 That is, is the 'path_or_image' argument an in-memory image?
                 (default False)
@@ -192,7 +192,7 @@ class ImageSignature(object):
         Corresponds to 'step 1' in Goldberg's paper
 
         Args:
-            image_or_path (string or numpy array): image path, or image array
+            image_or_path (string or numpy.ndarray): image path, or image array
             bytestream (Optional[boolean]): will the image be passed as raw bytes?
                 That is, is the 'path_or_image' argument an in-memory image?
                 (default False)
@@ -256,7 +256,7 @@ class ImageSignature(object):
         Corresponds to the first part of 'step 2' in Goldberg's paper
 
         Args:
-            image (numpy array): n x m array of floats -- the greyscale image. Typically, the
+            image (numpy.ndarray): n x m array of floats -- the greyscale image. Typically, the
                 output of preprocess_image
             lower_percentile (Optional[int]): crop image by percentage of difference (default 5)
             upper_percentile (Optional[int]): as lower_percentile (default 95)
@@ -321,10 +321,10 @@ class ImageSignature(object):
         Corresponds to the second part of 'step 2' in the paper
 
         Args:
-            image (numpy array): n x m array of floats -- the greyscale image. Typically,
+            image (numpy.ndarray): n x m array of floats -- the greyscale image. Typically,
                 the output of preprocess_image
             n (Optional[int]): number of gridpoints in each direction (default 9)
-            window (Optional[list of tuples]): limiting coordinates [(t, b), (l, r)], typically the
+            window (Optional[List[Tuple[int]]]): limiting coordinates [(t, b), (l, r)], typically the
                 output of (default None)
 
         Returns:
@@ -355,10 +355,10 @@ class ImageSignature(object):
         Corresponds to 'step 3'
 
         Args:
-            image (numpy array): n x m array of floats -- the greyscale image. Typically,
+            image (numpy.ndarray): n x m array of floats -- the greyscale image. Typically,
                 the output of preprocess_image
-            x_coords (numpy array): array of row numbers
-            y_coords (numpy array): array of column numbers
+            x_coords (numpy.ndarray): array of row numbers
+            y_coords (numpy.ndarray): array of column numbers
             P (Optional[int]): size of boxes in pixels (default None)
 
         Returns:
@@ -429,7 +429,7 @@ class ImageSignature(object):
         lower right
 
         Args:
-            grey_level_matrix (numpy array): grid of values sampled from image
+            grey_level_matrix (numpy.ndarray): grid of values sampled from image
             diagonal_neighbors (Optional[boolean]): whether or not to use diagonal
                 neighbors (default True)
 
@@ -513,11 +513,11 @@ class ImageSignature(object):
         'Step 4' of the paper.  The flattened version of this array is the image signature.
 
         Args:
-            difference_array (numpy array): n x n x l array, where l are the differences between
+            difference_array (numpy.ndarray): n x n x l array, where l are the differences between
                 the grid point and its neighbors. Typically the output of compute_differentials
             identical_tolerance (Optional[float]): maximum amount two gray values can differ and
                 still be considered equivalent (default 2/255)
-            n_levels (Optional 2): bin differences into 2 n + 1 bins (e.g. n_levels=2 -> [-2, -1,
+            n_levels (Optional[int]): bin differences into 2 n + 1 bins (e.g. n_levels=2 -> [-2, -1,
                 0, 1, 2])
 
         Examples:
@@ -579,8 +579,8 @@ class ImageSignature(object):
         Computes || b - a || / ( ||b|| + ||a||)
 
         Args:
-            _a (numpy array): array of size m
-            _b (numpy array): array of size m
+            _a (numpy.ndarray): array of size m
+            _b (numpy.ndarray): array of size m
 
         Returns:
             normalized distance between signatures (float)
