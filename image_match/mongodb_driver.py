@@ -6,7 +6,33 @@ import numpy as np
 
 
 class SignatureMongo(SignatureDatabaseBase):
+    """MongoDB driver for image-match
+
+    """
     def __init__(self, collection, *args, **kwargs):
+        """Additional MongoDB setup
+
+        Args:
+            collection (collection): a MongoDB collection instance
+            args (Optional): Variable length argument list to pass to base constructor
+            kwargs (Optional): Arbitrary keyword arguments to pass to base constructor
+
+        Examples:
+            >>> from image_match.mongodb_driver import SignatureMongo
+            >>> from pymongo import MongoClient
+            >>> client = MongoClient(connect=False)
+            >>> c = client.images.images
+            >>> ses = SignatureMongo(c)
+            >>> ses.add_image('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg')
+            >>> ses.search_image('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg')
+            [
+             {'dist': 0.0,
+              'id': u'AVM37nMg0osmmAxpPvx6',
+              'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
+              'score': 0.28797293}
+            ]
+
+        """
         self.collection = collection
         # Extract index fields, if any exist yet
         if self.collection.count() > 0:
@@ -107,19 +133,23 @@ class SignatureMongo(SignatureDatabaseBase):
 
 
 def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cursor=100):
-    """Scans a cursor for word matches below a distance threshold.
+    """Given a cursor, iterate through matches
+
+    Scans a cursor for word matches below a distance threshold.
     Exhausts a cursor, possibly enqueuing many matches
     Note that placing this function outside the SignatureCollection
     class breaks encapsulation.  This is done for compatibility with
     multiprocessing.
-    Keyword arguments:
-    result_q -- a multiprocessing queue in which to queue results
-    word -- {word_name: word_value} dict to scan against
-    collection -- a pymongo collection
-    signature -- signature array to match against
-    cutoff -- normalized distance limit (default 0.5)
-    max_in_cursor -- if more than max_in_cursor matches are in the cursor,
-        ignore this cursor; this column is not discriminatory
+
+    Args:
+        result_q (multiprocessing.Queue): a multiprocessing queue in which to queue results
+        word (dict): {word_name: word_value} dict to scan against
+        collection (collection): a pymongo collection
+        signature (numpy.ndarray): signature array to match against
+        cutoff (Optional[float]): normalized distance limit (default 0.5)
+        max_in_cursor (Optional[int]): if more than max_in_cursor matches are in the cursor,
+            ignore this cursor; this column is not discriminatory (default 100)
+
     """
     curs = collection.find(word, projection=['_id', 'signature', 'path'])
 
@@ -140,3 +170,4 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
             # do nothing...the cursor is exhausted
             break
     result_q.put('STOP')
+
