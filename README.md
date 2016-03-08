@@ -26,7 +26,7 @@ If you just want to generate and compare image signatures, you can skip this ste
 2. Install image-match
 
   ```text
-  $ pip install -r requirements.txt
+  $ pip install numpy
   $ pip install .
   ```
 
