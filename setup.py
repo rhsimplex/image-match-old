@@ -63,6 +63,15 @@ setup(
 
     packages=find_packages(),
 
+    setup_requires=[
+        'pytest-runner',
+        # There is an issue installing numpy thru the `install_requires`
+        # directive. Putting `numpy` in `setup_requires` seems to fix the
+        # problem.
+        # Reference:
+        #  - https://github.com/numpy/numpy/issues/2434#issuecomment-65252402
+        'numpy>=1.10,<1.11',
+    ],
     install_requires=[
         'numpy>=1.10,<1.11',
         'scipy>=0.17,<0.18',
@@ -70,7 +79,6 @@ setup(
         'cairosvg>1,<2',
         'elasticsearch>=2.3,<2.4',
     ],
-    setup_requires=['pytest-runner'],
     tests_require=tests_require,
     extras_require={
         'test': tests_require,
