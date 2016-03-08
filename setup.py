@@ -11,7 +11,6 @@ al <http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps>.
 
 from setuptools import setup, find_packages
 
-
 tests_require = [
     'coverage',
     'pep8',
@@ -33,6 +32,19 @@ docs_require = [
     'sphinxcontrib-napoleon>=0.4.4',
     'sphinx-rtd-theme>=0.1.9',
 ]
+
+
+def check_if_numpy_is_installed():
+    try:
+        import numpy
+    except ImportError:
+        print('There is an issue installing numpy automatically as a '
+              'dependency. Please install it manually using\n'
+              ' $ pip install numpy\n'
+              'or try Anaconda: https://www.continuum.io/')
+        exit(1)
+
+check_if_numpy_is_installed()
 
 setup(
     name='image_match',
@@ -65,17 +77,11 @@ setup(
 
     setup_requires=[
         'pytest-runner',
-        # There is an issue installing numpy thru the `install_requires`
-        # directive. Putting `numpy` in `setup_requires` seems to fix the
-        # problem.
-        # Reference:
-        #  - https://github.com/numpy/numpy/issues/2434#issuecomment-65252402
-        'numpy>=1.10,<1.11',
     ],
     install_requires=[
         'numpy>=1.10,<1.11',
         'scipy>=0.17,<0.18',
-        'scikit-image>=0.11,<0.12',
+        'scikit-image>=0.12,<0.13',
         'cairosvg>1,<2',
         'elasticsearch>=2.3,<2.4',
     ],
@@ -86,3 +92,4 @@ setup(
         'docs':  docs_require,
     },
 )
+
