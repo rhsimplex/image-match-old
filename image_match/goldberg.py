@@ -24,19 +24,14 @@ class ImageSignature(object):
 
         Args:
             n (Optional[int]): size of grid imposed on image. Grid is n x n (default 9)
-
             crop_percentiles (Optional[Tuple[int]]): lower and upper bounds when considering how much
                 variance to keep in the image (default (5, 95))
-
             P (Optional[int]): size of sample region, P x P. If none, uses a sample region based
                 on the size of the image (default None)
-
             diagonal_neighbors (Optional[boolean]): whether to include diagonal grid neighbors
                 (default True)
-
             identical_tolerance (Optional[float]): cutoff difference for declaring two adjacent
                 grid points identical (default 2/255)
-
             n_levels (Optional[int]): number of positive and negative groups to stratify neighbor
                 differences into. n = 2 -> [-2, -1, 0, 1, 2] (default 2)
 

@@ -15,17 +15,11 @@ class SignatureES(SignatureDatabaseBase):
 
         Args:
             es (elasticsearch): an instance of the elasticsearch python driver
-
             index (Optional[string]): a name for the Elasticsearch index (default 'images')
-
             doc_type (Optional[string]): a name for the document time (default 'image')
-
             timeout (Optional[int]): how long to wait on an Elasticsearch query, in seconds (default 10)
-
             size (Optional[int]): maximum number of Elasticsearch results (default 100)
-
             *args (Optional): Variable length argument list to pass to base constructor
-
             **kwargs (Optional): Arbitrary keyword arguments to pass to base constructor
 
         Examples:

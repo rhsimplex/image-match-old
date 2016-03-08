@@ -14,9 +14,7 @@ class SignatureMongo(SignatureDatabaseBase):
 
         Args:
             collection (collection): a MongoDB collection instance
-
             args (Optional): Variable length argument list to pass to base constructor
-
             kwargs (Optional): Arbitrary keyword arguments to pass to base constructor
 
         Examples:

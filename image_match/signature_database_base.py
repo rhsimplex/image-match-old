@@ -143,20 +143,14 @@ class SignatureDatabaseBase(object):
 
         Args:
             k (Optional[int]): the width of a word (default 16)
-
             N (Optional[int]): the number of words (default 63)
-
             n_grid (Optional[int]): the n_grid x n_grid size to use in determining
                 the image signature (default 9)
-
             crop_percentiles (Optional[Tuple[int]]): lower and upper bounds when
                 considering how much variance to keep in the image (default (5, 95))
-
             distance_cutoff (Optional [float]): maximum image signature distance to
                 be considered a match (default 0.45)
-
             *signature_args: Variable length argument list to pass to ImageSignature
-
             **signature_kwargs: Arbitrary keyword arguments to pass to ImageSignature
 
         """
@@ -190,7 +184,6 @@ class SignatureDatabaseBase(object):
         Args:
             path (string): path or identifier for image. If img=None, then path is assumed to be
                 a URL or filesystem path
-
             img (Optional[string]): raw image data. In this case, path will still be stored, but
                 a signature will be generated from data in img (default None)
 
@@ -204,10 +197,8 @@ class SignatureDatabaseBase(object):
         Args:
             path (string): path or image data. If bytestream=False, then path is assumed to be
                 a URL or filesystem path. Otherwise, it's assumed to be raw image data
-
             all_orientations (Optional[boolean]): if True, search for all combinations of mirror
                 images, rotations, and color inversions (default False)
-
             bytestream (Optional[boolean]): will the image be passed as raw bytes?
                 That is, is the 'path_or_image' argument an in-memory image?
                 (default False)
@@ -286,14 +277,10 @@ def make_record(path, gis, k, N, img=None):
     Args:
         path (string): path or image data. If bytestream=False, then path is assumed to be
             a URL or filesystem path. Otherwise, it's assumed to be raw image data
-
         gis (ImageSignature): an instance of ImageSignature for generating the
             signature
-
         k (int): width of words for encoding
-
         N (int): number of words for encoding
-
         img (Optional[string]): raw image data. In this case, path will still be stored, but
             a signature will be generated from data in img (default None)
 
@@ -360,9 +347,7 @@ def get_words(array, k, N):
 
     Args:
         array (numpy.ndarray): array to split into words
-
         k (int): word length
-
         N (int): number of words
 
     Returns:
@@ -444,9 +429,7 @@ def normalized_distance(_target_array, _vec, nan_value=1.0):
 
     Args:
         _target_array (numpy.ndarray): N x m array
-
         _vec (numpy.ndarray): array of size m
-
         nan_value (Optional[float]): value to replace 0.0/0.0 = nan with
             (default 1.0, to take those featureless images out of contention)
 
