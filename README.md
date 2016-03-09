@@ -11,7 +11,7 @@ al](http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps).  There is an existing
 may be more suited to your needs.
 
 ## Getting started
-You'll need a scientific Python distribution and a database backend. Currently
+You'll need a (scientific) Python distribution and a database backend. Currently
 we use Elasticsearch as a backend.
 
 
@@ -20,7 +20,8 @@ Image-match requires several scientific Python packages.  Although they can be
 installed and built individually, they are often bundled in a custom Python
 distribution, for instance [Anaconda](https://www.continuum.io/why-anaconda).
 Installation instructions can be found
-[here](https://www.continuum.io/downloads#_unix).
+[here](https://www.continuum.io/downloads#_unix). You can set up image-match
+without a prebuilt distribution, but the performance may suffer.
 
 
 ### Elasticsearch
