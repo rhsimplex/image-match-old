@@ -1,3 +1,5 @@
+# This repository is no longer maintained! You can now find image-match at https://github.com/ascribe/image-match
+
 # image-match
 image-match is a simple package for finding approximate image matches from a
 corpus.  It is similar, for instance, to [pHash](http://www.phash.org/), but
