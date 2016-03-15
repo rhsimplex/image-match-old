@@ -127,7 +127,7 @@ original Mona Lisas, but considerably closer than the Caravaggio.
 In addition to generating image signatures, image-match also facilitates
 storing and efficient lookup of images—even for up to (at least) a billion
 images.  Instagram account only has a few million images? Don't worry, you can
-get 80M images [here](http://horatio.cs.nyu.edu/mit/tiny/data/index.html]) to
+get 80M images [here](http://horatio.cs.nyu.edu/mit/tiny/data/index.html) to
 play with.
 
 A signature database wraps an Elasticsearch index, so you'll need Elasticsearch
