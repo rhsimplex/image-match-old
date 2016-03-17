@@ -29,7 +29,8 @@ If you just want to generate and compare image signatures, you can skip this
 step. If you want to search over a corpus of millions or billions of image
 signatures, you will need a database backend. We built image-match around
 [Elasticsearch](https://www.elastic.co/).  See download and installation
-instructions [here](https://www.elastic.co/downloads/elasticsearch).
+instructions [here](https://www.elastic.co/downloads/elasticsearch).  We're 
+using Elasticsearch 2.2.1 in these examples.
 
 
 ### Install image-match
