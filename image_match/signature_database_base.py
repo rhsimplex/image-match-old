@@ -178,17 +178,24 @@ class SignatureDatabaseBase(object):
 
         self.gis = ImageSignature(n=n_grid, crop_percentiles=crop_percentile, *signature_args, **signature_kwargs)
 
-    def add_image(self, path, img=None):
+    def add_image(self, path, img=None, bytestream=False):
         """Add a single image to the database
 
         Args:
             path (string): path or identifier for image. If img=None, then path is assumed to be
                 a URL or filesystem path
-            img (Optional[string]): raw image data. In this case, path will still be stored, but
-                a signature will be generated from data in img (default None)
+            img (Optional[string]): usually raw image data. In this case, path will still be stored, but
+                a signature will be generated from data in img. If bytestream is False, but img is
+                not None, then img is assumed to be the URL or filesystem path. Thus, you can store
+                image records with a different 'path' than the actual image location (default None)
+            bytestream (Optional[boolean]): will the image be passed as raw bytes?
+                That is, is the 'path_or_image' argument an in-memory image? If img is None but, this
+                argument will be ignored.  If img is not None, and bytestream is False, then the behavior
+                is as described in the explanation for the img argument
+                (default False)
 
         """
-        rec = make_record(path, self.gis, self.k, self.N, img=img)
+        rec = make_record(path, self.gis, self.k, self.N, img=img, bytestream=bytestream)
         self.insert_single_record(rec)
 
     def search_image(self, path, all_orientations=False, bytestream=False):
@@ -266,7 +273,7 @@ class SignatureDatabaseBase(object):
         return r
 
 
-def make_record(path, gis, k, N, img=None):
+def make_record(path, gis, k, N, img=None, bytestream=False):
     """Makes a record suitable for database insertion.
 
     Note:
@@ -281,8 +288,15 @@ def make_record(path, gis, k, N, img=None):
             signature
         k (int): width of words for encoding
         N (int): number of words for encoding
-        img (Optional[string]): raw image data. In this case, path will still be stored, but
-            a signature will be generated from data in img (default None)
+        img (Optional[string]): usually raw image data. In this case, path will still be stored, but
+            a signature will be generated from data in img. If bytestream is False, but img is
+            not None, then img is assumed to be the URL or filesystem path. Thus, you can store
+            image records with a different 'path' than the actual image location (default None)
+        bytestream (Optional[boolean]): will the image be passed as raw bytes?
+            That is, is the 'path_or_image' argument an in-memory image? If img is None but, this
+            argument will be ignored.  If img is not None, and bytestream is False, then the behavior
+            is as described in the explanation for the img argument
+            (default False)
 
     Returns:
         An image record.
@@ -314,7 +328,7 @@ def make_record(path, gis, k, N, img=None):
     record = dict()
     record['path'] = path
     if img is not None:
-        signature = gis.generate_signature(img, bytestream=True)
+        signature = gis.generate_signature(img, bytestream=bytestream)
     else:
         signature = gis.generate_signature(path)
 
