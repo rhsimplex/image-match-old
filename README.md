@@ -10,6 +10,10 @@ al](http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps).  There is an existing
 [reference implementation](https://www.pureftpd.org/project/libpuzzle) which
 may be more suited to your needs.
 
+The folks over at [Pavlov](https://pavlovml.com/) have released an excellent
+[containerized version of image-match](https://github.com/pavlovml/match) for
+easy scaling and deployment.
+
 ## Getting started
 You'll need a (scientific) Python distribution and a database backend. Currently
 we use Elasticsearch as a backend.
