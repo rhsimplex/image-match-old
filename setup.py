@@ -34,18 +34,6 @@ docs_require = [
 ]
 
 
-def check_if_numpy_is_installed():
-    try:
-        import numpy
-    except ImportError:
-        print('There is an issue installing numpy automatically as a '
-              'dependency. Please install it manually using\n'
-              ' $ pip install numpy\n'
-              'or try Anaconda: https://www.continuum.io/')
-        exit(1)
-
-check_if_numpy_is_installed()
-
 setup(
     name='image_match',
     version='0.1.0',
@@ -79,8 +67,6 @@ setup(
         'pytest-runner',
     ],
     install_requires=[
-        'numpy>=1.10,<1.11',
-        'scipy>=0.17,<0.18',
         'scikit-image>=0.12,<0.13',
         'cairosvg>1,<2',
         'elasticsearch>=2.3,<2.4',
@@ -92,4 +78,3 @@ setup(
         'docs':  docs_require,
     },
 )
-
