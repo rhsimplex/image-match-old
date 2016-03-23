@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  image-match:
+    build: .
+    volumes:
+      - .:/usr/src/app/
+  elasticsearch:
+    image: elasticsearch
