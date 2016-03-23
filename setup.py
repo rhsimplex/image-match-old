@@ -85,7 +85,7 @@ setup(
     packages=find_packages(),
 
     setup_requires=[
-        'pytest-runner',
+        'pytest-runner', 'numpy',
     ],
     install_requires=[
         'scikit-image>=0.12,<0.13',
