@@ -20,8 +20,11 @@ Image-match requires several scientific Python packages.  Although they can be
 installed and built individually, they are often bundled in a custom Python
 distribution, for instance [Anaconda](https://www.continuum.io/why-anaconda).
 Installation instructions can be found
-[here](https://www.continuum.io/downloads#_unix). You can set up image-match
-without a prebuilt distribution, but the performance may suffer.
+[here](https://www.continuum.io/downloads#_unix).
+
+You can set up image-match without a prebuilt distribution, but the performance
+may suffer.  Note that scipy and numpy require many system-level dependencies
+that you made need to install first.
 
 
 ### Elasticsearch
@@ -34,6 +37,19 @@ using Elasticsearch 2.2.1 in these examples.
 
 
 ### Install image-match
+
+Here are a few options:
+
+#### Install with pip
+
+```
+$ pip install numpy
+$ pip install scipy
+$ pip install image_match
+```
+
+#### Build from source
+
 1. Clone this repository:
 
   ```
@@ -42,24 +58,36 @@ using Elasticsearch 2.2.1 in these examples.
 
 2. Install image-match
 
+  From the project directory:
   ```
   $ pip install numpy
+  $ pip install scipy
   $ pip install .
   ```
 
-3. Make sure elasticsearch is running (optional):
+#### Make sure elasticsearch is running (optional):
 
-  For example, on Ubuntu you can check with:
+For example, on Ubuntu you can check with:
 
-  ```
-  $ sudo service elasticsearch status
-  ```
+```
+$ sudo service elasticsearch status
+```
 
-  If it's not running, simply run:
+If it's not running, simply run:
 
-  ```
-  $ sudo service elasticsearch start
-  ```
+```
+$ sudo service elasticsearch start
+```
+
+#### Docker
+
+We have a Docker image that takes care of setting up image-match and
+elasticsearch.  Consider it an alternative to the methods described above.
+
+```
+$ docker pull ascribe/image-match
+$ docker run -it ascribe/image-match /bin/bash
+```
 
 ## Image signatures and distances
 Consider these two photographs of the [Mona
