@@ -48,6 +48,7 @@ def test_identity():
     dist = gis.normalized_distance(sig, sig)
     assert dist == 0.0
 
+
 def test_difference():
     gis = ImageSignature()
     sig1 = gis.generate_signature('test.jpg')
