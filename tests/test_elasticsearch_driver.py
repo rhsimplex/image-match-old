@@ -1,6 +1,7 @@
 import pytest
 import urllib
 from elasticsearch import Elasticsearch, ConnectionError
+from time import sleep
 
 from image_match.elasticsearch_driver import SignatureES
 
@@ -8,16 +9,23 @@ test_img_url1 = 'https://camo.githubusercontent.com/810bdde0a88bc3f8ce70c5d85d85
 test_img_url2 = 'https://camo.githubusercontent.com/826e23bc3eca041110a5af467671b012606aa406/68747470733a2f2f63322e737461746963666c69636b722e636f6d2f382f373135382f363831343434343939315f303864383264653537655f7a2e6a7067'
 urllib.urlretrieve(test_img_url1, 'test1.jpg')
 
-es = Elasticsearch()
+es = Elasticsearch(hosts=['elasticsearch'])
 index_name = 'test_environment'
 
 
 def test_elasticsearch_running():
-    try:
-        es.ping()
-        assert True
-    except ConnectionError:
-        pytest.fail('Elasticsearch not running')
+    i = 0
+    while i < 5:
+        try:
+            es.ping()
+            assert True
+            return
+        except ConnectionError:
+            i += 1
+            sleep(2)
+
+    pytest.fail('Elasticsearch not running (failed to connect after {} tries)'
+                .format(str(i)))
 
 
 def test_add_image_by_url():
