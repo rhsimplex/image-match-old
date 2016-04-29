@@ -83,6 +83,18 @@ If it's not running, simply run:
 $ sudo service elasticsearch start
 ```
 
+On OSX, to have `launchd` start elasticsearch, run : 
+
+```
+$ brew services start elasticsearch
+```
+
+or simply run ,
+
+```
+$ elasticsearch
+```
+
 #### Docker
 
 We have a Docker image that takes care of setting up image-match and
