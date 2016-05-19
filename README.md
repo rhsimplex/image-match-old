@@ -1,4 +1,6 @@
+[![PyPI](https://img.shields.io/pypi/status/image-match.svg?maxAge=2592000)](https://pypi.python.org/pypi/image-match)
 [![PyPI](https://img.shields.io/pypi/v/image-match.svg)](https://pypi.python.org/pypi/image-match)
+[![Documentation Status](https://readthedocs.org/projects/bigchaindb/badge/?version=latest)](https://bigchaindb.readthedocs.org/en/latest/)
 
 # image-match
 image-match is a simple package for finding approximate image matches from a
