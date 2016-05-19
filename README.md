@@ -1,3 +1,5 @@
+[![PyPI](https://img.shields.io/pypi/v/image-match.svg)](https://pypi.python.org/pypi/image-match)
+
 # image-match
 image-match is a simple package for finding approximate image matches from a
 corpus.  It is similar, for instance, to [pHash](http://www.phash.org/), but
