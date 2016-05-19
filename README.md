@@ -21,6 +21,10 @@ easy scaling and deployment.
 ## Quick start
 
 ### [Install and setup image-match](http://image-match.readthedocs.io/en/latest/start.html)
+
+Once you're up and running, read these two (short) sections of the documentation to get a feel 
+for what image-match is capable of:
+
 ### [Image signatures](http://image-match.readthedocs.io/en/latest/signatures.html)
 ### [Storing and searching images](http://image-match.readthedocs.io/en/latest/signatures.html)
 
