@@ -26,5 +26,4 @@ Once you're up and running, read these two (short) sections of the documentation
 for what image-match is capable of:
 
 ### [Image signatures](http://image-match.readthedocs.io/en/latest/signatures.html)
-### [Storing and searching images](http://image-match.readthedocs.io/en/latest/signatures.html)
-
+### [Storing and searching images](http://image-match.readthedocs.io/en/latest/searches.html)
