@@ -2,6 +2,7 @@ from signature_database_base import SignatureDatabaseBase
 from signature_database_base import normalized_distance
 from datetime import datetime
 import numpy as np
+import json
 
 
 class SignatureES(SignatureDatabaseBase):
@@ -49,10 +50,11 @@ class SignatureES(SignatureDatabaseBase):
         path = rec.pop('path')
         signature = rec.pop('signature')
 
-        fields = ['path', 'signature']
+        fields = ['path', 'signature', 'ext']
 
         # build the 'should' list
-        should = [{'term': {word: rec[word]}} for word in rec]
+        should = [{'term': {word: rec[word]}} if rec[word]  else None for word in rec]
+        should = filter(lambda t:t,  should)
         res = self.es.search(index=self.index,
                               doc_type=self.doc_type,
                               body={'query':
@@ -76,6 +78,7 @@ class SignatureES(SignatureDatabaseBase):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
+                          'ext': x['fields'].get('ext'),
                           'path': x['fields'].get('url', x['fields'].get('path'))[0]}
                          for x in res]
 
