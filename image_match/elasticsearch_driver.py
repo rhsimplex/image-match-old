@@ -2,7 +2,6 @@ from signature_database_base import SignatureDatabaseBase
 from signature_database_base import normalized_distance
 from datetime import datetime
 import numpy as np
-import json
 
 
 class SignatureES(SignatureDatabaseBase):
