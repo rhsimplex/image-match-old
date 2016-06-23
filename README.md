@@ -360,3 +360,10 @@ some knowledge of [the search
 algorithm](http://www.cs.cmu.edu/~hcwong/Pdfs/icip02.ps). You can also look at
 the two included database drivers for guidelines.
 
+## Tests
+
+You can run the tests with:
+
+```bash
+$ py.test
+```
