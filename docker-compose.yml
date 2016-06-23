@@ -5,6 +5,8 @@ services:
     build: .
     volumes:
       - .:/usr/src/app/
+    links:
+      - elasticsearch
   elasticsearch:
     image: elasticsearch
   bdocs:
