@@ -43,7 +43,7 @@ class SignatureDatabaseBase(object):
                  'simple_word_21': 10753207,
                  'simple_word_22': 9566120,
                  ...
-                 'ext': '',
+                 'metadata': {'category': 'art'},
                  }
 
                  The number of simple words corresponds to the attribute N
@@ -56,15 +56,13 @@ class SignatureDatabaseBase(object):
             [
              {'dist': 0.069116439263706961,
               'id': u'AVM37oZq0osmmAxpPvx7',
-              'ext': '',
               'path': u'https://pixabay.com/static/uploads/photo/2012/11/28/08/56/mona-lisa-67506_960_720.jpg'},
              {'dist': 0.22484320805049718,
               'id': u'AVM37nMg0osmmAxpPvx6',
-              'ext': '',
               'path': u'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg/687px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg'},
              {'dist': 0.42529792112113302,
               'id': u'AVM37p530osmmAxpPvx9',
-              'ext': '',
+              'metadata': {...},
               'path': u'https://c2.staticflickr.com/8/7158/6814444991_08d82de57e_z.jpg'}
             ]
 
@@ -104,7 +102,7 @@ class SignatureDatabaseBase(object):
                  'simple_word_21': 10753207,
                  'simple_word_22': 9566120,
                  ...
-                 'ext':''
+                 'metadata': {...}
                  }
 
                  The number of simple words corresponds to the attribute N
@@ -183,7 +181,7 @@ class SignatureDatabaseBase(object):
 
         self.gis = ImageSignature(n=n_grid, crop_percentiles=crop_percentile, *signature_args, **signature_kwargs)
 
-    def add_image(self, path, img=None, bytestream=False, ext = ''):
+    def add_image(self, path, img=None, bytestream=False, metadata=None):
         """Add a single image to the database
 
         Args:
@@ -198,10 +196,10 @@ class SignatureDatabaseBase(object):
                 argument will be ignored.  If img is not None, and bytestream is False, then the behavior
                 is as described in the explanation for the img argument
                 (default False)
-            ext (Optional[string]):  json like string, extend information
+            metadata (Optional): any other information you want to include, can be nested (default None)
 
         """
-        rec = make_record(path, self.gis, self.k, self.N, img=img, bytestream=bytestream, ext=ext)
+        rec = make_record(path, self.gis, self.k, self.N, img=img, bytestream=bytestream, metadata=metadata)
         self.insert_single_record(rec)
 
     def search_image(self, path, all_orientations=False, bytestream=False):
@@ -279,7 +277,7 @@ class SignatureDatabaseBase(object):
         return r
 
 
-def make_record(path, gis, k, N, img=None, bytestream=False, ext=''):
+def make_record(path, gis, k, N, img=None, bytestream=False, metadata=None):
     """Makes a record suitable for database insertion.
 
     Note:
@@ -303,7 +301,7 @@ def make_record(path, gis, k, N, img=None, bytestream=False, ext=''):
             argument will be ignored.  If img is not None, and bytestream is False, then the behavior
             is as described in the explanation for the img argument
             (default False)
-        ext (Optional[string]):  json like string, extend information
+        metadata (Optional): any other information you want to include, can be nested (default None)
 
     Returns:
         An image record.
@@ -329,7 +327,7 @@ def make_record(path, gis, k, N, img=None, bytestream=False, ext=''):
          'simple_word_21': 10753207,
          'simple_word_22': 9566120,
          ...
-         'ext':''
+         'metadata': {...}
          }
 
     """
@@ -342,7 +340,8 @@ def make_record(path, gis, k, N, img=None, bytestream=False, ext=''):
 
     record['signature'] = signature.tolist()
 
-    record['ext'] = ext
+    if metadata:
+        record['metadata'] = metadata
 
     words = get_words(signature, k, N)
     max_contrast(words)

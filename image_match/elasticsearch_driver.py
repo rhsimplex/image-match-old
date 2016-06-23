@@ -49,7 +49,7 @@ class SignatureES(SignatureDatabaseBase):
         path = rec.pop('path')
         signature = rec.pop('signature')
 
-        fields = ['path', 'signature', 'ext']
+        fields = ['path', 'signature', 'metadata']
 
         # build the 'should' list
         should = [{'term': {word: rec[word]}} if rec[word]  else None for word in rec]
@@ -77,7 +77,7 @@ class SignatureES(SignatureDatabaseBase):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
-                          'ext': x['fields'].get('ext'),
+                          'metadata': x['fields'].get('metadata'),
                           'path': x['fields'].get('url', x['fields'].get('path'))[0]}
                          for x in res]
 
