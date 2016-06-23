@@ -9,3 +9,15 @@ services:
       - elasticsearch
   elasticsearch:
     image: elasticsearch
+  bdocs:
+    build: .
+    volumes:
+      - .:/usr/src/app/
+    working_dir: /usr/src/app/docs
+    command: make html
+  vdocs:
+    image: nginx
+    ports:
+      - '40080:80'
+    volumes:
+      - ./docs/build/html:/usr/share/nginx/html
