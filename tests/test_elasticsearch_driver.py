@@ -97,7 +97,7 @@ def test_lookup_from_url(ses):
     sleep(1)
     r = ses.search_image(test_img_url1)
     assert len(r) == 1
-    assert 'path' in r[0]
+    assert r[0]['path'] == 'test1.jpg'
     assert 'score' in r[0]
     assert 'dist' in r[0]
     assert 'id' in r[0]
@@ -108,7 +108,7 @@ def test_lookup_from_file(ses):
     sleep(1)
     r = ses.search_image('test1.jpg')
     assert len(r) == 1
-    assert 'path' in r[0]
+    assert r[0]['path'] == 'test1.jpg'
     assert 'score' in r[0]
     assert 'dist' in r[0]
     assert 'id' in r[0]
@@ -119,7 +119,7 @@ def test_lookup_from_bytestream(ses):
     with open('test1.jpg', 'rb') as f:
         r = ses.search_image(f.read(), bytestream=True)
     assert len(r) == 1
-    assert 'path' in r[0]
+    assert r[0]['path'] == 'test1.jpg'
     assert 'score' in r[0]
     assert 'dist' in r[0]
     assert 'id' in r[0]
