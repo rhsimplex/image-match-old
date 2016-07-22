@@ -48,8 +48,8 @@ class SignatureES(SignatureDatabaseBase):
     def search_single_record(self, rec):
         path = rec.pop('path')
         signature = rec.pop('signature')
-
-        fields = ['path', 'signature']
+        if 'metadata' in rec:
+            rec.pop('metadata')
 
         # build the 'should' list
         should = [{'term': {word: rec[word]}} for word in rec]
@@ -62,12 +62,13 @@ class SignatureES(SignatureDatabaseBase):
                                                     'bool': {'should': should}
                                               }
                                           }
-                                      }},
-                              fields=fields,
+                                      },
+                                    '_source': {'exclude': ['simple_word_*']}
+                              },
                               size=self.size,
                               timeout=self.timeout)['hits']['hits']
 
-        sigs = np.array([x['fields']['signature'] for x in res])
+        sigs = np.array([x['_source']['signature'] for x in res])
 
         if sigs.size == 0:
             return []
@@ -76,7 +77,8 @@ class SignatureES(SignatureDatabaseBase):
 
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
-                          'path': x['fields'].get('url', x['fields'].get('path'))[0]}
+                          'metadata': x['_source'].get('metadata'),
+                          'path': x['_source'].get('url', x['_source'].get('path'))[0]}
                          for x in res]
 
         for i, row in enumerate(formatted_res):

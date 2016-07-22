@@ -151,7 +151,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
             ignore this cursor; this column is not discriminatory (default 100)
 
     """
-    curs = collection.find(word, projection=['_id', 'signature', 'path'])
+    curs = collection.find(word, projection=['_id', 'signature', 'path', 'metadata'])
 
     # if the cursor has many matches, then it's probably not a huge help. Get the next one.
     if curs.count() > max_in_cursor:
@@ -164,7 +164,7 @@ def get_next_match(result_q, word, collection, signature, cutoff=0.5, max_in_cur
             rec = curs.next()
             dist = normalized_distance(np.reshape(signature, (1, signature.size)), np.array(rec['signature']))[0]
             if dist < cutoff:
-                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id']}
+                matches[rec['_id']] = {'dist': dist, 'path': rec['path'], 'id': rec['_id'], 'metadata': rec['metadata']}
                 result_q.put(matches)
         except StopIteration:
             # do nothing...the cursor is exhausted

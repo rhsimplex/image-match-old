@@ -97,6 +97,10 @@ def test_lookup_from_url(ses):
     sleep(1)
     r = ses.search_image(test_img_url1)
     assert len(r) == 1
+    assert 'path' in r[0]
+    assert 'score' in r[0]
+    assert 'dist' in r[0]
+    assert 'id' in r[0]
 
 
 def test_lookup_from_file(ses):
@@ -104,7 +108,10 @@ def test_lookup_from_file(ses):
     sleep(1)
     r = ses.search_image('test1.jpg')
     assert len(r) == 1
-
+    assert 'path' in r[0]
+    assert 'score' in r[0]
+    assert 'dist' in r[0]
+    assert 'id' in r[0]
 
 def test_lookup_from_bytestream(ses):
     ses.add_image('test1.jpg')
@@ -112,7 +119,10 @@ def test_lookup_from_bytestream(ses):
     with open('test1.jpg', 'rb') as f:
         r = ses.search_image(f.read(), bytestream=True)
     assert len(r) == 1
-
+    assert 'path' in r[0]
+    assert 'score' in r[0]
+    assert 'dist' in r[0]
+    assert 'id' in r[0]
 
 def test_lookup_with_cutoff(ses):
     ses.add_image('test2.jpg')
@@ -129,3 +139,19 @@ def check_distance_consistency(ses):
     r = ses.search_image('test1.jpg')
     assert r[0]['dist'] == 0.0
     assert r[-1]['dist'] == 0.42672771706789686
+
+
+def test_add_image_with_metadata(ses):
+    metadata = {'some_info':
+                    {'test':
+                         'ok!'
+                     }
+                }
+    ses.add_image('test1.jpg', metadata=metadata)
+    sleep(1)
+    r = ses.search_image('test1.jpg')
+    assert r[0]['metadata'] == metadata
+    assert 'path' in r[0]
+    assert 'score' in r[0]
+    assert 'dist' in r[0]
+    assert 'id' in r[0]
