@@ -78,7 +78,7 @@ class SignatureES(SignatureDatabaseBase):
         formatted_res = [{'id': x['_id'],
                           'score': x['_score'],
                           'metadata': x['_source'].get('metadata'),
-                          'path': x['_source'].get('url', x['_source'].get('path'))[0]}
+                          'path': x['_source'].get('url', x['_source'].get('path'))}
                          for x in res]
 
         for i, row in enumerate(formatted_res):
